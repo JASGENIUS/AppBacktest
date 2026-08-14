@@ -195,14 +195,25 @@ export const FILE_INPUT_SOURCE = `((sel) => {
   return false;
 })`;
 
-/** Transient-feedback capture (toasts / aria-live), installed as init script. */
+/**
+ * Transient-feedback capture (toasts / aria-live), installed as an init script.
+ *
+ * Messages are pushed to a Node-side binding the moment they appear, because
+ * "Saved!" toasts routinely live in a document that then navigates away —
+ * reading them out of the page later loses them. The in-page array remains as
+ * a fallback for the window before the binding is installed.
+ */
 export const TRANSIENT_OBSERVER_SOURCE = `(() => {
   const LIVE = '[role="alert"],[role="status"],[aria-live]';
   window.__abt_transients = window.__abt_transients || [];
   const push = (t) => {
     const s = (t || "").replace(/\\s+/g, " ").trim();
-    const arr = window.__abt_transients;
-    if (s && arr[arr.length - 1] !== s) arr.push(s);
+    if (!s || window.__abt_last === s) return;
+    window.__abt_last = s;
+    if (typeof window.__abtPushTransient === "function") {
+      try { window.__abtPushTransient(s); return; } catch (e) {}
+    }
+    window.__abt_transients.push(s);
   };
   const scan = (n) => {
     if (!n) return;

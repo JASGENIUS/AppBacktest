@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cove — Expenses</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top"><span class="brand">Cove</span> Expenses</header>
+  <main>
+    <div class="row-between">
+      <h1>Your expenses</h1>
+      <a class="btn primary" href="/new">New expense</a>
+    </div>
+    <table class="grid">
+      <thead><tr><th>Description</th><th>Amount</th><th>Category</th><th>Status</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+  </main>
+  <script src="/config.js"></script>
+  <script>
+    const rows = document.getElementById("rows");
+    const toast = document.getElementById("toast");
+
+    function showToast(text) {
+      toast.textContent = text;
+      toast.hidden = false;
+      setTimeout(() => { toast.hidden = true; }, 4000);
+    }
+
+    async function render() {
+      const list = await (await fetch("/api/expenses")).json();
+      rows.innerHTML = "";
+      for (const e of list) {
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          `<td>${e.description}</td><td>$${e.amount}</td>` +
+          `<td>${e.category}</td><td>${e.status}</td>`;
+        const td = document.createElement("td");
+        const del = document.createElement("button");
+        del.textContent = "Delete";
+        del.setAttribute("aria-label", "Delete " + e.description);
+        del.addEventListener("click", async () => {
+          if (!confirm("Delete this expense?")) return;
+          await fetch("/api/expenses/" + e.id, { method: "DELETE" });
+          showToast("Expense deleted");
+          render();
+        });
+        td.appendChild(del);
+        tr.appendChild(td);
+        rows.appendChild(tr);
+      }
+    }
+    render();
+  </script>
+</body>
+</html>

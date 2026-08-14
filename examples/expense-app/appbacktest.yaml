@@ -1,0 +1,62 @@
+# Cove expenses — live-LLM backtest on NVIDIA NIM (free tier).
+# Needs NVIDIA_API_KEY in .env. This app exercises paths the POD demo doesn't:
+# a native <select>, a modal dialog, and a confirm() delete.
+#
+# The planted bug is ORDER-DEPENDENT (closing the note modal clobbers the
+# already-chosen category), which makes this a good demonstration of why
+# persona variation matters: the two personas below reach different paths
+# through the same form, and only one of them trips the bug.
+
+app:
+  name: Cove Expenses
+  url: http://localhost:4174
+  command: node server.js
+  resetHook: { method: POST, url: /api/reset }
+
+provider:
+  type: openai_compatible
+  baseUrl: https://integrate.api.nvidia.com/v1
+  model: nvidia/nemotron-3-super-120b-a12b
+  apiKeyEnv: NVIDIA_API_KEY
+
+personas:
+  employee:
+    device: desktop
+    patience: normal
+    doubleClickChance: 0.0   # this scenario is not about double-clicks
+    traits: ["organised", "in a hurry"]
+
+  # Same task, a different (equally realistic) working style. Ordering is a
+  # real axis of human variation, and it is exactly what decides whether an
+  # order-dependent bug is reached.
+  methodical:
+    device: desktop
+    patience: normal
+    doubleClickChance: 0.0
+    traits:
+      - "works through forms strictly top to bottom, finishing each field before moving on"
+      - "leaves optional extras like notes and attachments until the very end"
+
+scenarios:
+  submit_expense:
+    persona: employee
+    goal: &expense_goal >
+      Submit a new expense for a client lunch that cost 48.20, categorised as
+      Meals. Your finance team also requires a note on the expense — separate
+      from the description field — reading "Client lunch with Acme".
+      Make sure the expense is actually saved before you finish.
+    checks: &expense_checks
+      # The user was told it worked...
+      - { type: transient, contains: "Expense submitted" }
+      # ...exactly one expense was created (2 seeded + 1 new)...
+      - { type: http, url: /api/expenses, count: 3 }
+      # ...and the server actually stored the category the user chose.
+      - { type: http, url: /api/expenses, path: "2.category", equals: "meals" }
+
+  submit_expense_methodical:
+    persona: methodical
+    goal: *expense_goal
+    checks: *expense_checks
+
+runs: 2
+browser: { headless: true, actionTimeoutMs: 8000 }

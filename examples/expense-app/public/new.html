@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New expense — Cove</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top"><a href="/" class="brand">Cove</a> Expenses</header>
+  <main>
+    <h1>New expense</h1>
+    <form id="expense-form" class="card" onsubmit="return false">
+      <label for="description">Description</label>
+      <input id="description" type="text" placeholder="What was it for?">
+
+      <label for="amount">Amount</label>
+      <input id="amount" type="text" placeholder="0.00">
+
+      <label for="category">Category</label>
+      <select id="category">
+        <option value="uncategorized">Uncategorized</option>
+        <option value="meals">Meals</option>
+        <option value="travel">Travel</option>
+        <option value="software">Software</option>
+        <option value="lodging">Lodging</option>
+      </select>
+
+      <div class="note-row">
+        <button type="button" id="note-btn">Add note</button>
+        <span id="note-preview" class="muted"></span>
+      </div>
+
+      <button type="button" id="submit-btn" class="primary">Submit expense</button>
+    </form>
+
+    <div id="note-modal" class="modal" role="dialog" aria-modal="true" aria-label="Add a note" hidden>
+      <div class="modal-card">
+        <h2>Add a note</h2>
+        <label for="note-text">Note</label>
+        <input id="note-text" type="text" placeholder="Optional context">
+        <div class="modal-actions">
+          <button type="button" id="note-cancel">Cancel</button>
+          <button type="button" id="note-save" class="primary">Save note</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+  </main>
+  <script src="/config.js"></script>
+  <script src="/form.js"></script>
+</body>
+</html>

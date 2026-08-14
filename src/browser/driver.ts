@@ -109,6 +109,13 @@ class PlaywrightDriver implements BrowserDriver {
           }
         : { viewport: { width: 1280, height: 800 } },
     );
+    // Bind BEFORE the init script so in-page toasts reach Node the instant
+    // they fire — a document that navigates away takes its DOM with it.
+    await this.context.exposeFunction("__abtPushTransient", (text: string) => {
+      if (typeof text === "string" && text.length > 0) {
+        this.transientBuf.push(text.slice(0, 300));
+      }
+    });
     await this.context.addInitScript(TRANSIENT_OBSERVER_SOURCE);
 
     this.page = await this.context.newPage();

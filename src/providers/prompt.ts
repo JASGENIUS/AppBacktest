@@ -56,7 +56,7 @@ export function elementLine(el: PerceivedElement): string {
   const annotations: string[] = [];
   if (el.value !== undefined) annotations.push(`value="${truncate(el.value, VALUE_MAX)}"`);
   if (el.disabled) annotations.push("disabled");
-  if (el.occluded) annotations.push("occluded");
+  if (el.occluded) annotations.push("COVERED - behind an overlay, cannot be clicked yet");
   if (el.options && el.options.length > 0) {
     const opts = el.options
       .map((o) => (o.value === o.label ? o.value : `${o.value} (${o.label})`))
@@ -76,8 +76,12 @@ export function buildSystemPrompt(ctx: DecideContext): string {
     `Your goal: ${ctx.goal}. ` +
     `You are NOT testing the site; behave like a normal user trying to get this done. ` +
     `One action per turn. Interact only with elements listed in the perception, by their ref. ` +
+    `An element marked COVERED sits behind an open dialog or overlay — finish or dismiss ` +
+    `that dialog first (its own buttons are clickable) instead of trying to click through it. ` +
+    `A control you need may not be on screen yet — fields often live behind a button that opens ` +
+    `a dialog or reveals a section, so try the relevant elements before concluding something is missing. ` +
     `When you believe the goal is complete use done (outcome success, or unsure if you could not confirm); ` +
-    `if the goal seems impossible, give_up. You have ${actionsLeft} actions left.`
+    `use give_up only once you have actually tried the plausible options. You have ${actionsLeft} actions left.`
   );
 }
 
