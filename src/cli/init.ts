@@ -25,6 +25,11 @@ provider:
   type: anthropic          # needs ANTHROPIC_API_KEY in .env
   model: claude-opus-5
   effort: low
+  # Any OpenAI-compatible endpoint (NVIDIA NIM free tier, OpenAI, Ollama):
+  # type: openai_compatible
+  # baseUrl: https://integrate.api.nvidia.com/v1
+  # model: nvidia/nemotron-3-super-120b-a12b
+  # apiKeyEnv: NVIDIA_API_KEY        # omit for keyless endpoints
   # Zero-key deterministic alternative (decisions from a JSON file):
   # type: fixture
   # path: ./fixtures/my-scenario.json
@@ -44,6 +49,9 @@ scenarios:                 # a goal and its proof, side by side
       Sign in and change your display name to "Alex", then make sure it saved.
     checks:
       - { type: text, contains: "Saved" }
+      # For toasts / auto-dismissing messages use transient, not text —
+      # it asserts "the user was shown X" against the recorded trace:
+      # - { type: transient, contains: "Profile saved" }
       # State assertions are the workhorse — the agent's opinion is never trusted:
       # - { type: http, url: /api/me, path: profile.displayName, equals: "Alex" }
 

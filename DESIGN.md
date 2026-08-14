@@ -139,17 +139,22 @@ API key present when needed) with one-line actionable errors.
 [--scenario] [--headed]`, `replay <runId>`, `promote <runId>`, `regression`,
 `list`) · YAML config (zod, discriminated unions, unknown keys are errors) ·
 seeded world generation (personas, perturbation schedules, stable sub-seeds)
-· goal-based agent · providers: `anthropic` (default `claude-opus-5`) and
-`fixture` (zero-key) · perception per §4 · closed action vocabulary
+· goal-based agent · providers: `anthropic` (default `claude-opus-5`,
+schema-forced tool calls), `openai_compatible` (any chat-completions
+endpoint — NVIDIA NIM / OpenAI / Ollama — prompted vocabulary + hardened
+JSON extraction + 429/5xx backoff; live-validated on NIM), and `fixture`
+(zero-key) · perception per §4 · closed action vocabulary
 (navigate/click/type/select/upload/press/scroll/back/wait/done/give_up) ·
 double-click perturbation (same-task double dispatch) · filechooser
 interception + hidden-input upload resolution · dialog handling (recorded,
 surfaced to agent) · popup adoption · toast/aria-live capture · observers
 (console errors, page errors, failed requests w/ ERR_ABORTED ignored,
-HTTP ≥ 400, action errors, dialereplaced, give-ups, step overage; ignore
-patterns configurable) · checks (`url`, `text`, `no_text`, `element`,
-`no_element`, `http` GET-only via browser-context request with status/path/
-count/equals, settle-and-poll policy) · verdicts PASS / FAIL / SETUP_FAILED
+HTTP ≥ 400, action errors, auto-handled dialogs, give-ups, step overage;
+ignore patterns configurable) · checks (`url`, `text`, `no_text`,
+`transient` — toasts/aria-live asserted against the recorded trace, since
+agent think-time outlives auto-dismissing toasts — `element`, `no_element`,
+`http` GET-only via browser-context request with status/path/count/equals,
+settle-and-poll policy) · verdicts PASS / FAIL / SETUP_FAILED
 with failure precedence setup_failed > technical > check_error > assertion ·
 structural agent belief (done outcome enum) · discrepancy + reverse-
 discrepancy flags · passedWithObservations · self-contained RunRecords
@@ -163,8 +168,9 @@ apps) · vitest suite for the deterministic core.
 **Out (roadmap):** multi-actor concurrency · identity-keyed network fault
 injection · invariants engine · DB evaluators (the independent oracle) ·
 `compare` · HTML report · product discovery · mobile/API adapters · levels ·
-LLM UX judge · non-Anthropic providers (the `AgentProvider` interface is the
-seam — a new provider is a new file, not a refactor) · baseline capture /
+LLM UX judge · further providers beyond anthropic/openai-compatible (the
+`AgentProvider` seam held: `openai_compatible` shipped as one new file with
+zero engine changes) · baseline capture /
 `ui-matches-api` checks · multi-identity permission probes · virtualized-list
 paging · drag-and-drop.
 

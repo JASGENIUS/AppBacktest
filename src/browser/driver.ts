@@ -248,6 +248,7 @@ class PlaywrightDriver implements BrowserDriver {
 
   async act(action: AgentAction, opts: ActOptions): Promise<ActOutcome> {
     const page = this.mustPage();
+    const urlBefore = page.url();
     const perturbations: PerturbationEvent[] = [];
     const fail = (errorKind: StepErrorKind, error: string): ActOutcome => ({
       ok: false,
@@ -357,6 +358,15 @@ class PlaywrightDriver implements BrowserDriver {
       // done / give_up: no browser work.
 
       await page.waitForLoadState("load", { timeout: 1500 }).catch(() => {});
+      if (action.kind === "click" && this.mustPage().url() === urlBefore) {
+        // A click's navigation may not have STARTED yet (the old document's
+        // load state resolves instantly) — give an in-flight navigation a
+        // beat so urlAfter reflects where the click actually took the user.
+        await page.waitForTimeout(300);
+        await this.mustPage()
+          .waitForLoadState("domcontentloaded", { timeout: 1200 })
+          .catch(() => {});
+      }
       await this.harvestTransients();
       return {
         ok: true,
