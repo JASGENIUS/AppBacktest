@@ -52,11 +52,17 @@ export function parseAction(input: unknown): AgentAction {
 }
 
 /**
- * Plain JSON Schema for the "act" tool (strict mode). Hand-written — no
- * zod-to-json-schema dependency. Must match `parseAction` exactly.
+ * Action variants as plain JSON Schema. Hand-written — no zod-to-json-schema
+ * dependency. Must match `parseAction` exactly (the providers test walks every
+ * variant to keep them aligned).
+ *
+ * API-shape constraints honored here:
+ *  - the tool's input_schema root must be `type: "object"`, so the union is
+ *    wrapped in a required `action` property (providers unwrap it);
+ *  - strict structured outputs reject numeric bounds (minimum/maximum), so
+ *    wait.ms bounds live only in zod + the executor's hard cap.
  */
-export const actionJsonSchema: Record<string, unknown> = {
-  anyOf: [
+export const actionVariants: Array<Record<string, unknown>> = [
     {
       type: "object",
       properties: { kind: { const: "navigate" }, url: { type: "string" } },
@@ -118,7 +124,7 @@ export const actionJsonSchema: Record<string, unknown> = {
       type: "object",
       properties: {
         kind: { const: "wait" },
-        ms: { type: "integer", minimum: 1, maximum: 2000 },
+        ms: { type: "integer", description: "milliseconds, 1-2000" },
       },
       required: ["kind", "ms"],
       additionalProperties: false,
@@ -139,5 +145,20 @@ export const actionJsonSchema: Record<string, unknown> = {
       required: ["kind", "reason"],
       additionalProperties: false,
     },
-  ],
+];
+
+/** The strict tool input_schema sent to the API (object-rooted envelope). */
+export const actionJsonSchema: Record<string, unknown> = {
+  type: "object",
+  properties: { action: { anyOf: actionVariants } },
+  required: ["action"],
+  additionalProperties: false,
 };
+
+/** Unwrap a tool_use input that may carry the `{action: ...}` envelope. */
+export function unwrapActionEnvelope(input: unknown): unknown {
+  if (input && typeof input === "object" && "action" in (input as Record<string, unknown>)) {
+    return (input as Record<string, unknown>).action;
+  }
+  return input;
+}

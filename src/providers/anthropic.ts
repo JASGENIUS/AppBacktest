@@ -11,7 +11,7 @@ import type {
   HistoryEntry,
   PerceivedElement,
 } from "../core/types";
-import { actionJsonSchema, parseAction } from "./actionSchema";
+import { actionJsonSchema, parseAction, unwrapActionEnvelope } from "./actionSchema";
 
 export interface AnthropicProviderConfig {
   model?: string;
@@ -176,10 +176,8 @@ export class AnthropicProvider implements AgentProvider {
       tools: [
         {
           name: "act",
-          description: "Perform your next action as this user.",
+          description: "Perform your next action as this user. Provide exactly one action object.",
           strict: true,
-          // anyOf-rooted schema; the SDK's InputSchema type nominally wants
-          // a top-level type:"object" but accepts arbitrary schema keys.
           input_schema: actionJsonSchema as Anthropic.Tool.InputSchema,
         },
       ],
@@ -245,6 +243,6 @@ export class AnthropicProvider implements AgentProvider {
         `response contained no tool_use block (stop_reason: ${response.stop_reason})`,
       );
     }
-    return toolUse.input;
+    return unwrapActionEnvelope(toolUse.input);
   }
 }

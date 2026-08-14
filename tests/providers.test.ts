@@ -8,7 +8,12 @@ import type {
   PerceivedElement,
   ResolvedPersona,
 } from "../src/core/types";
-import { actionJsonSchema, parseAction } from "../src/providers/actionSchema";
+import {
+  actionJsonSchema,
+  actionVariants,
+  parseAction,
+  unwrapActionEnvelope,
+} from "../src/providers/actionSchema";
 import { AnthropicProvider } from "../src/providers/anthropic";
 import { FixtureProvider } from "../src/providers/fixture";
 import { createProvider } from "../src/providers/index";
@@ -122,7 +127,25 @@ describe("actionJsonSchema", () => {
     required: string[];
     additionalProperties: boolean;
   }
-  const branches = (actionJsonSchema as { anyOf: Branch[] }).anyOf;
+  const branches = actionVariants as unknown as Branch[];
+
+  it("is object-rooted with a required action envelope (API tool-schema shape)", () => {
+    // Tool input_schema roots must be type:"object"; the union nests under
+    // `action`, and providers unwrap it.
+    expect(actionJsonSchema.type).toBe("object");
+    expect(actionJsonSchema.required).toEqual(["action"]);
+    expect(actionJsonSchema.additionalProperties).toBe(false);
+    const props = actionJsonSchema.properties as { action: { anyOf: unknown[] } };
+    expect(props.action.anyOf).toBe(actionVariants);
+    expect(unwrapActionEnvelope({ action: { kind: "back" } })).toEqual({ kind: "back" });
+    expect(unwrapActionEnvelope({ kind: "back" })).toEqual({ kind: "back" });
+  });
+
+  it("never uses numeric bounds (unsupported by strict structured outputs)", () => {
+    const text = JSON.stringify(actionJsonSchema);
+    expect(text).not.toContain('"minimum"');
+    expect(text).not.toContain('"maximum"');
+  });
 
   it("has one strict object branch per action kind", () => {
     expect(branches).toHaveLength(11);

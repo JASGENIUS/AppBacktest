@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npx vitest run
+
+      # Integration proof: the zero-key demo must DISCOVER the planted bug.
+      # Seed 555001 deterministically double-clicks the upload in runs 1 and 2,
+      # so the expected exit code is exactly 2 (two failed runs).
+      - name: demo discovers the planted bug
+        run: |
+          set +e
+          node dist/cli/index.js run --config examples/pod-app/appbacktest.yaml --seed 555001
+          code=$?
+          set -e
+          echo "exit code: $code (expected 2 — two discovered failures)"
+          test "$code" -eq 2
