@@ -116,6 +116,27 @@ provider:
   apiKeyEnv: NVIDIA_API_KEY          # omit for keyless endpoints like Ollama
 ```
 
+#### Running it for free
+
+You do not need a paid API key to use AppBacktest with a real model. Three
+free routes, all through the same `openai_compatible` provider:
+
+| Route | Cost | Limits | Setup |
+|---|---|---|---|
+| **NVIDIA NIM** | free | per-model congestion, no daily cap | key at [build.nvidia.com](https://build.nvidia.com) |
+| **OpenRouter** (`:free` models) | free | 20 req/min · 50 req/day (1000 after $10 lifetime spend) | key at [openrouter.ai/keys](https://openrouter.ai/keys) |
+| **Ollama** | free | your own hardware | `baseUrl: http://localhost:11434/v1`, drop `apiKeyEnv` |
+
+One scenario run costs roughly one request per step (~5–6 for the demo), so
+OpenRouter's free 50/day is about 8 runs — fine for validation, tight for
+iteration. NIM has no daily cap and is the better default; when a specific
+model there is congested, the other pool usually isn't.
+
+Ready-to-run configs: `appbacktest.nim.yaml`, `appbacktest.openrouter.yaml`,
+`appbacktest.anthropic.yaml`. Verified live on NIM: `nemotron-3-super-120b`
+(fast, ~6s/step) and `z-ai/glm-5.2` (reasoner, ~20s/step) both complete the
+scenario correctly.
+
 `examples/pod-app/appbacktest.nim.yaml` is ready to run. In live testing,
 Nemotron-3-Super discovered the planted bug in its own way — it re-clicked
 "Upload POD" when feedback felt slow, stacked onto the seeded double-click,

@@ -1,0 +1,52 @@
+# PODHaul demo — OpenRouter free tier.
+# Needs a free key from https://openrouter.ai/keys (no payment required) in
+# .env as OPENROUTER_API_KEY.
+#
+# Free-tier limits (verified 2026-08-14): 20 requests/minute, and 50
+# requests/DAY on an account with under $10 lifetime purchases (1000/day
+# above that). One run of this scenario costs ~5-6 requests, so a fresh free
+# account is good for roughly 8 runs per day — fine for validation, tight for
+# iteration. NVIDIA NIM (appbacktest.nim.yaml) has no daily cap and is the
+# better default for repeated runs; use this as a second free pool when NIM
+# congests on a given model.
+#
+# Other free models on OpenRouter worth trying (all support tool calling):
+#   nvidia/nemotron-3-ultra-550b-a55b:free   (550B, 1M context)
+#   openai/gpt-oss-20b:free
+#   google/gemma-4-31b-it:free
+#   nvidia/nemotron-3-nano-30b-a3b:free      (small + fast)
+
+app:
+  name: POD Demo
+  url: http://localhost:4173
+  command: node server.js
+  resetHook: { method: POST, url: /api/reset }
+
+provider:
+  type: openai_compatible
+  baseUrl: https://openrouter.ai/api/v1
+  # Same model already proven live on NIM — a known-good baseline.
+  model: nvidia/nemotron-3-super-120b-a12b:free
+  apiKeyEnv: OPENROUTER_API_KEY
+
+personas:
+  driver:
+    device: desktop
+    patience: normal
+    doubleClickChance: 0.5
+    uploadSizeKB: 400
+    traits: ["in a hurry", "not very technical"]
+
+scenarios:
+  pod_upload:
+    persona: driver
+    goal: >
+      You are a truck driver. Upload a proof-of-delivery photo for load #38419
+      and make sure it was accepted.
+    checks:
+      - { type: url,  contains: "/loads/" }
+      - { type: transient, contains: "Upload received" }
+      - { type: http, url: /api/loads/38419/pods, count: 1 }
+
+runs: 1
+browser: { headless: true, actionTimeoutMs: 8000 }

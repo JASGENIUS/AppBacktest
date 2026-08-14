@@ -46,19 +46,51 @@ export async function ensureApp(
     );
   }
 
-  const proc = spawn(app.command, { shell: true, cwd: configDir, stdio: "ignore" });
+  const proc = spawn(app.command, {
+    shell: true,
+    cwd: configDir,
+    stdio: ["ignore", "ignore", "pipe"],
+  });
+
+  // Keep the last of stderr so a failed command explains itself instead of
+  // timing out silently.
+  let stderrTail = "";
+  proc.stderr?.on("data", (chunk: Buffer) => {
+    stderrTail = (stderrTail + chunk.toString()).slice(-500);
+  });
+
+  let exited: { code: number | null; signal: NodeJS.Signals | null } | undefined;
+  proc.on("exit", (code, signal) => {
+    exited = { code, signal };
+  });
+  proc.on("error", (err) => {
+    exited = { code: null, signal: null };
+    stderrTail = `${stderrTail}\n${err.message}`.slice(-500);
+  });
+
+  const explain = () => {
+    const detail = stderrTail.trim();
+    return (
+      `\n  command: ${app.command}\n  cwd: ${configDir}` +
+      (detail ? `\n  stderr: ${detail.split("\n").slice(-4).join("\n          ")}` : "")
+    );
+  };
+
   const deadline = Date.now() + READY_TIMEOUT_MS;
   while (Date.now() < deadline) {
     if (await reachable(app.url)) {
-      return {
-        started: true,
-        stop: async () => killTree(proc),
-      };
+      return { started: true, stop: async () => killTree(proc) };
+    }
+    // Fail fast: a command that already exited is never going to serve.
+    if (exited) {
+      throw new Error(
+        `app.command exited (${exited.signal ?? `code ${exited.code ?? "?"}`}) before ${app.url} came up.${explain()}`,
+      );
     }
     await new Promise((r) => setTimeout(r, POLL_MS));
   }
   killTree(proc);
   throw new Error(
-    `app at ${app.url} did not become reachable within ${READY_TIMEOUT_MS / 1000}s (command: ${app.command})`,
+    `app at ${app.url} did not become reachable within ${READY_TIMEOUT_MS / 1000}s.${explain()}`,
   );
 }
