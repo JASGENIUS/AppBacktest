@@ -35,6 +35,16 @@ const providerSchema = z.discriminatedUnion("type", [
     .strict(),
   z
     .object({
+      type: z.literal("openai_compatible"),
+      baseUrl: z.string().url(),
+      model: z.string().min(1),
+      apiKeyEnv: z.string().min(1).optional(),
+      temperature: z.number().min(0).max(2).optional(),
+      maxTokens: z.number().int().positive().max(32000).optional(),
+    })
+    .strict(),
+  z
+    .object({
       type: z.literal("fixture"),
       path: z.string().min(1),
     })
@@ -54,6 +64,7 @@ const personaSchema = z
 const atField = z.string().min(1).optional();
 
 const checkSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("transient"), contains: z.string().min(1) }).strict(),
   z.object({ type: z.literal("url"), contains: z.string().min(1) }).strict(),
   z.object({ type: z.literal("text"), contains: z.string().min(1), at: atField }).strict(),
   z.object({ type: z.literal("no_text"), contains: z.string().min(1), at: atField }).strict(),

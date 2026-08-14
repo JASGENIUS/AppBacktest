@@ -30,7 +30,7 @@ scenarios:
       and make sure it was accepted.
     checks:
       - { type: url,  contains: "/loads/" }
-      - { type: text, contains: "Upload received" }
+      - { type: transient, contains: "Upload received" }
       # The state assertion the agent's opinion can't fool:
       - { type: http, url: /api/loads/38419/pods, count: 1 }
 

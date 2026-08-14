@@ -25,6 +25,8 @@ export interface RunChecksOptions {
   settleMs?: number;
   /** Interval between polls of a failing check. Default 500 (8 polls ≈ 4s). */
   pollMs?: number;
+  /** Every toast/aria-live message captured during the run (for `transient` checks). */
+  transients?: string[];
 }
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -247,10 +249,32 @@ async function evalHttp(
   };
 }
 
+/**
+ * `transient` asserts against the RECORDED trace, not the live DOM: toasts
+ * auto-dismiss, and an agent's think-time before done() routinely outlives
+ * them — asserting "the user was shown X" against the final page would race.
+ * Pure data, never polls, can't error.
+ */
+function evalTransient(
+  check: Extract<CheckConfig, { type: "transient" }>,
+  transients: string[],
+): CheckResult {
+  const wanted = norm(check.contains);
+  const passed = transients.some((t) => norm(t).includes(wanted));
+  return {
+    check,
+    passed,
+    errored: false,
+    actual: transients.slice(0, 10),
+    ...(passed ? {} : { detail: `no transient message contained "${check.contains}"` }),
+  };
+}
+
 async function evaluateOnce(
   check: CheckConfig,
   driver: BrowserDriver,
   appUrl: string,
+  transients: string[],
 ): Promise<CheckResult> {
   try {
     switch (check.type) {
@@ -259,6 +283,8 @@ async function evaluateOnce(
       case "text":
       case "no_text":
         return await evalText(check, driver);
+      case "transient":
+        return evalTransient(check, transients);
       case "element":
       case "no_element":
         return await evalElement(check, driver);
@@ -290,15 +316,17 @@ export async function runChecks(
 ): Promise<CheckResult[]> {
   const settleMs = opts.settleMs ?? 400;
   const pollMs = opts.pollMs ?? 500;
+  const transients = opts.transients ?? [];
   if (settleMs > 0) await sleep(settleMs);
 
   const results: CheckResult[] = [];
   for (const check of checks) {
     let attempts = 1;
-    let result = await evaluateOnce(check, driver, appUrl);
-    while (!result.passed && !result.errored && attempts <= MAX_POLLS) {
+    let result = await evaluateOnce(check, driver, appUrl, transients);
+    // transient checks are pure trace data — re-polling cannot change them
+    while (!result.passed && !result.errored && check.type !== "transient" && attempts <= MAX_POLLS) {
       await sleep(pollMs);
-      result = await evaluateOnce(check, driver, appUrl);
+      result = await evaluateOnce(check, driver, appUrl, transients);
       attempts += 1;
     }
     results.push({ ...result, attempts });

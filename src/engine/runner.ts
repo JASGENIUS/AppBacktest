@@ -45,6 +45,28 @@ export function perceptionDigestOf(url: string, elements: Array<{ role: string; 
   return sha256(stableStringify({ url, els: elements.map((e) => [e.role, e.name, e.nth]) }));
 }
 
+/**
+ * Harvest incidents that arrive after the final action (a toast landing when
+ * the last request resolves). perceive() is what pulls in-page transients, so
+ * settle, perceive once, drain, and fold into the last step's incidents.
+ */
+export async function collectLateIncidents(driver: BrowserDriver, steps: StepRecord[]): Promise<void> {
+  if (steps.length === 0) return;
+  await new Promise((r) => setTimeout(r, 800));
+  try {
+    await driver.perceive();
+  } catch {
+    return; // page gone — nothing late to collect
+  }
+  const late = driver.drainIncidents();
+  const last = steps[steps.length - 1]!.incidents;
+  last.consoleDelta.push(...late.consoleDelta);
+  last.networkDelta.push(...late.networkDelta);
+  last.transientMessages.push(...late.transientMessages);
+  last.dialogs.push(...late.dialogs);
+  if (late.tabSwitched) last.tabSwitched = true;
+}
+
 async function invokeResetHook(config: AppBacktestConfig): Promise<string | null> {
   const hook = config.app.resetHook;
   if (!hook) return null;
@@ -86,7 +108,7 @@ export async function executeRun(plan: RunPlan, deps: RunDeps): Promise<RunRecor
     world: { persona: plan.persona },
     provider: {
       type: config.provider.type,
-      ...(config.provider.type === "anthropic" && config.provider.model
+      ...("model" in config.provider && config.provider.model
         ? { model: config.provider.model }
         : {}),
     },
@@ -241,9 +263,14 @@ export async function executeRun(plan: RunPlan, deps: RunDeps): Promise<RunRecor
     }
 
     // --- Judgment (independent of the agent's belief) ---
+    // Final feedback can land AFTER the last action's harvest (server latency
+    // outliving the click) — settle briefly and fold late incidents into the
+    // last step so the trace and the transient checks both see them.
+    await collectLateIncidents(driver, steps);
+    const transients = steps.flatMap((s) => s.incidents.transientMessages);
     let checkResults;
     try {
-      checkResults = await runChecks(plan.checks, driver, config.app.url);
+      checkResults = await runChecks(plan.checks, driver, config.app.url, { transients });
     } catch (err) {
       checkResults = plan.checks.map((check) => ({
         check,

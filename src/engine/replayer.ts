@@ -24,7 +24,7 @@ import { newRunId } from "../core/ids";
 import { runChecks, evaluate } from "../evaluators";
 import { deriveObservations } from "../observers";
 import { writeRunRecord } from "./recorder";
-import { perceptionDigestOf } from "./runner";
+import { collectLateIncidents, perceptionDigestOf } from "./runner";
 import type {
   AppBacktestConfig,
   BrowserDriver,
@@ -221,7 +221,11 @@ export async function replayRun(record: RunRecord, deps: ReplayDeps): Promise<Ru
 
       // --- Grade against the FROZEN checks ---
       if (!outcome && driver) {
-        checkResults = await runChecks(record.checks, driver, config.app.url);
+        // Machine-paced replay has no LLM think-time before grading — harvest
+        // feedback that lands after the last click (same rule as live runs).
+        await collectLateIncidents(driver, steps);
+        const transients = steps.flatMap((s) => s.incidents.transientMessages);
+        checkResults = await runChecks(record.checks, driver, config.app.url, { transients });
         const errored = checkResults.filter((r) => r.errored);
         if (errored.length > 0) {
           inconclusive(-1, `check could not evaluate: ${errored[0]!.detail ?? "transport error"}`);

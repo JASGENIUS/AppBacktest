@@ -98,10 +98,29 @@ echo "ANTHROPIC_API_KEY=sk-ant-..." > .env
 npx appbacktest run --config examples/pod-app/appbacktest.anthropic.yaml --headed
 ```
 
-Same world, but `claude-opus-5` figures out the flow from perception alone —
-watch it in the headed browser. Any Anthropic model works (`provider.model`);
-the provider interface is deliberately small, so other LLM providers are a
-new file, not a refactor.
+Same world, but a real model figures out the flow from perception alone —
+watch it in the headed browser. Two live provider types:
+
+- **`anthropic`** — schema-forced tool calls (the model structurally cannot
+  answer in prose). Any Anthropic model via `provider.model`.
+- **`openai_compatible`** — any `/v1/chat/completions` endpoint: NVIDIA NIM
+  (free tier), OpenAI, Ollama, vLLM. Prompted vocabulary + hardened JSON
+  extraction (reasoning tags stripped, fences unwrapped, balanced-brace scan);
+  the zod gate still makes invalid actions impossible.
+
+```yaml
+provider:
+  type: openai_compatible
+  baseUrl: https://integrate.api.nvidia.com/v1
+  model: nvidia/nemotron-3-super-120b-a12b
+  apiKeyEnv: NVIDIA_API_KEY          # omit for keyless endpoints like Ollama
+```
+
+`examples/pod-app/appbacktest.nim.yaml` is ready to run. In live testing,
+Nemotron-3-Super discovered the planted bug in its own way — it re-clicked
+"Upload POD" when feedback felt slow, stacked onto the seeded double-click,
+created **three** POD records, and confidently reported success. The state
+check disagreed. That's the product.
 
 ## Using it on your app
 
@@ -148,11 +167,14 @@ runs: 5                                       # each run gets its own sub-seed
 browser: { headless: true, actionTimeoutMs: 8000 }
 ```
 
-Check types: `url` / `text` / `no_text` / `element` / `no_element` (role +
-accessible name) / `http` (GET through the browser session — cookies flow —
-with `path` dot-walking, `count`, `equals`, `expectStatus`). `http` checks
-are the workhorse: *"exactly one order exists"* is something no toast can lie
-about.
+Check types: `url` / `text` / `no_text` / `transient` / `element` /
+`no_element` (role + accessible name) / `http` (GET through the browser
+session — cookies flow — with `path` dot-walking, `count`, `equals`,
+`expectStatus`). `http` checks are the workhorse: *"exactly one order
+exists"* is something no toast can lie about. Use `transient` (not `text`)
+for toasts and aria-live messages — they auto-dismiss, so they're asserted
+against the recorded trace ("the user was shown X"), never raced against the
+final DOM.
 
 ### CLI
 

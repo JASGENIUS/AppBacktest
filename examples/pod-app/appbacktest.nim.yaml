@@ -1,6 +1,8 @@
-# PODHaul demo — live-LLM variant. Requires ANTHROPIC_API_KEY in .env.
-# Same world, but a real model figures out the flow from perception alone.
-# Watch it: npx appbacktest run --config examples/pod-app/appbacktest.anthropic.yaml --headed
+# PODHaul demo — live-LLM variant on NVIDIA NIM (free tier).
+# Needs NVIDIA_API_KEY in .env (make one at build.nvidia.com).
+# nemotron-3-super answers a decision step in ~6s on this endpoint; z-ai/glm-5.2
+# also works (heavier reasoner, ~20s/step). Models come and go on NIM —
+# on a 404/410, probe GET https://integrate.api.nvidia.com/v1/models.
 
 app:
   name: POD Demo
@@ -9,9 +11,10 @@ app:
   resetHook: { method: POST, url: /api/reset }
 
 provider:
-  type: anthropic
-  model: claude-opus-5
-  effort: low
+  type: openai_compatible
+  baseUrl: https://integrate.api.nvidia.com/v1
+  model: nvidia/nemotron-3-super-120b-a12b
+  apiKeyEnv: NVIDIA_API_KEY
 
 personas:
   driver:

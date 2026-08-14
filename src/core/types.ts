@@ -69,6 +69,16 @@ export type CheckConfig =
   | { type: "url"; contains: string }
   | { type: "text"; contains: string }
   | { type: "no_text"; contains: string }
+  | {
+      /**
+       * Asserts the user was SHOWN a transient message (toast / aria-live)
+       * at some point during the run. `text` checks race auto-dismissing
+       * toasts — an agent's think-time before done() outlives them — so
+       * transient feedback is asserted against the recorded trace instead.
+       */
+      type: "transient";
+      contains: string;
+    }
   | { type: "element"; role: string; name: string; at?: string }
   | { type: "no_element"; role: string; name: string; at?: string }
   | {
@@ -127,6 +137,19 @@ export type ProviderConfig =
       model?: string;
       /** Reasoning effort for decision calls. Default: "low". */
       effort?: "low" | "medium" | "high";
+    }
+  | {
+      /**
+       * Any /v1/chat/completions endpoint: NVIDIA NIM, OpenAI, Ollama, vLLM.
+       * Prompted vocabulary + hardened JSON extraction; zod is still the gate.
+       */
+      type: "openai_compatible";
+      baseUrl: string;
+      model: string;
+      /** Env var holding the bearer token. Omit for keyless endpoints. */
+      apiKeyEnv?: string;
+      temperature?: number;
+      maxTokens?: number;
     }
   | {
       /** Fixture-driven decisions from a JSON file — zero API keys, fully deterministic. */

@@ -15,6 +15,16 @@ export function preflight(config: AppBacktestConfig, opts: { needProvider: boole
       "ANTHROPIC_API_KEY not set — add it to .env, or use provider.type: fixture for a zero-key run",
     );
   }
+  if (
+    opts.needProvider &&
+    config.provider.type === "openai_compatible" &&
+    config.provider.apiKeyEnv &&
+    !process.env[config.provider.apiKeyEnv]
+  ) {
+    problems.push(
+      `${config.provider.apiKeyEnv} not set — the openai_compatible provider needs it in .env (or drop apiKeyEnv for keyless endpoints)`,
+    );
+  }
 
   try {
     // executablePath() returns a path even when the browser was never
