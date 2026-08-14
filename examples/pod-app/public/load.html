@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Load — PODHaul</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top"><a href="/" class="brand">PODHaul</a> Dispatch</header>
+  <main>
+    <h1 id="load-title">Load</h1>
+    <p id="load-meta" class="meta"></p>
+
+    <section class="card">
+      <h2>Proof of delivery</h2>
+      <div class="upload-row">
+        <!-- Real-app-shaped: the actual input is hidden behind a styled button -->
+        <input type="file" id="pod-file" accept="image/*" style="display:none">
+        <button id="choose-btn" type="button">Choose photo</button>
+        <span id="chosen-name" class="chosen"></span>
+      </div>
+      <input id="notes" type="text" placeholder="Delivery notes">
+      <button id="upload-btn" type="button" class="primary">Upload POD</button>
+      <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+      <h3>Uploaded documents</h3>
+      <ul id="pod-list" class="pods"><li class="empty">None yet</li></ul>
+    </section>
+  </main>
+  <script src="/config.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -18,7 +18,9 @@
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "dev": "tsx src/cli/index.ts",
-    "example:app": "node examples/pod-app/server.js"
+    "example:app": "node examples/pod-app/server.js",
+    "demo": "npm run build && node dist/cli/index.js run --config examples/pod-app/appbacktest.yaml",
+    "demo:regression": "node dist/cli/index.js regression --config examples/pod-app/appbacktest.yaml"
   },
   "engines": {
     "node": ">=18"

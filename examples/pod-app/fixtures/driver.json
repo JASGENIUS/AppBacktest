@@ -1,0 +1,11 @@
+{
+  "description": "Recorded decision list for the pod_upload scenario. Targets use nameContains so the fixture survives ref renumbering; the fixture provider resolves them against the live perception each step.",
+  "decisions": [
+    { "kind": "click", "ref": { "role": "link", "nameContains": "38419" } },
+    { "kind": "upload", "ref": { "role": "button", "nameContains": "Choose photo" } },
+    { "kind": "type", "ref": { "role": "textbox", "nameContains": "Delivery notes" }, "text": "Delivered to dock 4" },
+    { "kind": "click", "ref": { "role": "button", "nameContains": "Upload POD" } },
+    { "kind": "wait", "ms": 1500 },
+    { "kind": "done", "outcome": "success", "summary": "Uploaded the POD photo and saw the confirmation message." }
+  ]
+}

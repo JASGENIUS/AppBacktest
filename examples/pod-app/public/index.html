@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PODHaul Dispatch</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top"><span class="brand">PODHaul</span> Dispatch</header>
+  <main>
+    <h1>Assigned loads</h1>
+    <ul id="loads" class="loads"></ul>
+  </main>
+  <script src="/config.js"></script>
+  <script>
+    fetch("/api/loads")
+      .then((r) => r.json())
+      .then((loads) => {
+        const ul = document.getElementById("loads");
+        for (const l of loads) {
+          const li = document.createElement("li");
+          const a = document.createElement("a");
+          a.href = "/loads/" + l.id;
+          a.textContent = `Load #${l.id} — ${l.origin} → ${l.destination} (${l.status.replace("_", " ")})`;
+          li.appendChild(a);
+          ul.appendChild(li);
+        }
+      });
+  </script>
+</body>
+</html>

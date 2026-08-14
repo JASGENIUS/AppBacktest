@@ -1,0 +1,41 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: #f4f5f7;
+  color: #1d232b;
+}
+.top {
+  background: #16324f;
+  color: #fff;
+  padding: 14px 24px;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+.brand { font-weight: 700; color: #fff; text-decoration: none; margin-right: 6px; }
+main { max-width: 640px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 22px; margin: 12px 0 4px; }
+h2 { font-size: 16px; margin: 0 0 12px; }
+h3 { font-size: 13px; margin: 20px 0 6px; text-transform: uppercase; letter-spacing: 0.06em; color: #5b6672; }
+.meta { color: #5b6672; margin: 0 0 20px; }
+.loads { list-style: none; padding: 0; }
+.loads li { margin: 0; border-bottom: 1px solid #e1e5ea; }
+.loads a { display: block; padding: 14px 4px; color: #16324f; text-decoration: none; }
+.loads a:hover { background: #eef1f4; }
+.card { background: #fff; border: 1px solid #e1e5ea; padding: 20px; }
+.upload-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.chosen { color: #5b6672; font-size: 13px; }
+button {
+  font: inherit;
+  padding: 9px 16px;
+  border: 1px solid #c6ccd4;
+  background: #fff;
+  cursor: pointer;
+}
+button.primary { background: #16324f; border-color: #16324f; color: #fff; }
+button:disabled { opacity: 0.5; cursor: default; }
+#notes { display: block; width: 100%; padding: 9px 10px; margin: 0 0 12px; border: 1px solid #c6ccd4; font: inherit; }
+.toast { margin-top: 12px; padding: 10px 12px; background: #e8f4ea; border: 1px solid #9fcea8; color: #1e5a2a; }
+.pods { list-style: none; padding: 0; margin: 0; }
+.pods li { padding: 8px 4px; border-bottom: 1px solid #eef1f4; font-size: 14px; }
+.pods .empty { color: #98a1ab; }

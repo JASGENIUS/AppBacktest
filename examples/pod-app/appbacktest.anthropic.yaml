@@ -1,0 +1,36 @@
+# PODHaul demo — live-LLM variant. Requires ANTHROPIC_API_KEY in .env.
+# Same world, but a real model figures out the flow from perception alone.
+# Watch it: npx appbacktest run --config examples/pod-app/appbacktest.anthropic.yaml --headed
+
+app:
+  name: POD Demo
+  url: http://localhost:4173
+  command: node server.js
+  resetHook: { method: POST, url: /api/reset }
+
+provider:
+  type: anthropic
+  model: claude-opus-5
+  effort: low
+
+personas:
+  driver:
+    device: desktop
+    patience: normal
+    doubleClickChance: 0.5
+    uploadSizeKB: 400
+    traits: ["in a hurry", "not very technical"]
+
+scenarios:
+  pod_upload:
+    persona: driver
+    goal: >
+      You are a truck driver. Upload a proof-of-delivery photo for load #38419
+      and make sure it was accepted.
+    checks:
+      - { type: url,  contains: "/loads/" }
+      - { type: text, contains: "Upload received" }
+      - { type: http, url: /api/loads/38419/pods, count: 1 }
+
+runs: 1
+browser: { headless: true, actionTimeoutMs: 8000 }

@@ -1,0 +1,38 @@
+# PODHaul demo — the zero-key golden path.
+# The fixture provider replays a recorded decision list, so this runs
+# deterministically on every machine with no API key. Seeded persona
+# perturbations (the double-click) still fire per sub-seed — which is how the
+# planted duplicate-POD bug gets discovered.
+
+app:
+  name: POD Demo
+  url: http://localhost:4173
+  command: node server.js
+  resetHook: { method: POST, url: /api/reset }
+
+provider:
+  type: fixture
+  path: ./fixtures/driver.json
+
+personas:
+  driver:
+    device: desktop
+    patience: normal
+    doubleClickChance: 0.5   # seeded: which runs double-click depends on the seed
+    uploadSizeKB: 400
+    traits: ["in a hurry", "not very technical"]
+
+scenarios:
+  pod_upload:
+    persona: driver
+    goal: >
+      You are a truck driver. Upload a proof-of-delivery photo for load #38419
+      and make sure it was accepted.
+    checks:
+      - { type: url,  contains: "/loads/" }
+      - { type: text, contains: "Upload received" }
+      # The state assertion the agent's opinion can't fool:
+      - { type: http, url: /api/loads/38419/pods, count: 1 }
+
+runs: 3
+browser: { headless: true, actionTimeoutMs: 8000 }

@@ -1,0 +1,264 @@
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import { afterAll, describe, expect, it } from "vitest";
+import type {
+  AgentAction,
+  DecideContext,
+  PerceivedElement,
+  ResolvedPersona,
+} from "../src/core/types";
+import { actionJsonSchema, parseAction } from "../src/providers/actionSchema";
+import { AnthropicProvider } from "../src/providers/anthropic";
+import { FixtureProvider } from "../src/providers/fixture";
+import { createProvider } from "../src/providers/index";
+
+const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "appbacktest-providers-"));
+afterAll(() => {
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+});
+
+let fixtureCounter = 0;
+function writeFixture(decisions: unknown[]): string {
+  const file = path.join(tmpDir, `fixture-${fixtureCounter++}.json`);
+  fs.writeFileSync(file, JSON.stringify({ decisions }), "utf8");
+  return file;
+}
+
+const persona: ResolvedPersona = {
+  device: "desktop",
+  patience: "normal",
+  maxSteps: 20,
+  doubleClickChance: 0,
+  uploadSizeKB: 200,
+  traits: [],
+};
+
+function el(ref: string, role: string, name: string): PerceivedElement {
+  return { ref, role, name, nth: 0 };
+}
+
+function makeCtx(elements: PerceivedElement[]): DecideContext {
+  return {
+    goal: "Upload a POD photo for load #38419",
+    persona,
+    appUrl: "http://localhost:4173",
+    stepIndex: 0,
+    maxSteps: 20,
+    history: [],
+    perception: {
+      url: "http://localhost:4173/loads",
+      title: "POD Demo",
+      textDigest: "Loads list. Load 38419 pending.",
+      elements,
+    },
+  };
+}
+
+describe("parseAction", () => {
+  it("accepts every action variant", () => {
+    const samples: AgentAction[] = [
+      { kind: "navigate", url: "/loads" },
+      { kind: "click", ref: "e1" },
+      { kind: "type", ref: "e2", text: "hello", pressEnter: true },
+      { kind: "select", ref: "e3", value: "38419" },
+      { kind: "upload", ref: "e4" },
+      { kind: "press", key: "Escape" },
+      { kind: "scroll", direction: "down" },
+      { kind: "back" },
+      { kind: "wait", ms: 2000 },
+      { kind: "done", outcome: "success", summary: "uploaded the POD" },
+      { kind: "give_up", reason: "no upload control anywhere" },
+    ];
+    for (const sample of samples) {
+      expect(parseAction(sample)).toEqual(sample);
+    }
+  });
+
+  it("rejects wait.ms above 2000 and below 1", () => {
+    expect(() => parseAction({ kind: "wait", ms: 3000 })).toThrow(/Invalid agent action/);
+    expect(() => parseAction({ kind: "wait", ms: 0 })).toThrow(/Invalid agent action/);
+    expect(() => parseAction({ kind: "wait", ms: 1.5 })).toThrow(/Invalid agent action/);
+  });
+
+  it("rejects unknown kinds", () => {
+    expect(() => parseAction({ kind: "hover", ref: "e1" })).toThrow(/Invalid agent action/);
+    expect(() => parseAction({ kind: "", ref: "e1" })).toThrow(/Invalid agent action/);
+    expect(() => parseAction(null)).toThrow(/Invalid agent action/);
+  });
+
+  it("rejects keys outside the whitelist and extra properties", () => {
+    expect(() => parseAction({ kind: "press", key: "Delete" })).toThrow(/Invalid agent action/);
+    expect(() => parseAction({ kind: "click", ref: "e1", force: true })).toThrow(
+      /Invalid agent action/,
+    );
+    expect(() => parseAction({ kind: "done", outcome: "failure", summary: "x" })).toThrow(
+      /Invalid agent action/,
+    );
+  });
+});
+
+describe("actionJsonSchema", () => {
+  // Every parseAction-accepted variant must fit at least one anyOf branch:
+  // kind const matches, required[] ⊆ sample keys, and (additionalProperties:
+  // false) every sample key is declared in the branch's properties.
+  const samples: AgentAction[] = [
+    { kind: "navigate", url: "/loads" },
+    { kind: "click", ref: "e1" },
+    { kind: "type", ref: "e2", text: "hello", pressEnter: false },
+    { kind: "select", ref: "e3", value: "38419" },
+    { kind: "upload", ref: "e4" },
+    { kind: "press", key: "ArrowDown" },
+    { kind: "scroll", direction: "up" },
+    { kind: "back" },
+    { kind: "wait", ms: 250 },
+    { kind: "done", outcome: "unsure", summary: "probably worked" },
+    { kind: "give_up", reason: "stuck" },
+  ];
+
+  interface Branch {
+    type: string;
+    properties: Record<string, Record<string, unknown>>;
+    required: string[];
+    additionalProperties: boolean;
+  }
+  const branches = (actionJsonSchema as { anyOf: Branch[] }).anyOf;
+
+  it("has one strict object branch per action kind", () => {
+    expect(branches).toHaveLength(11);
+    for (const branch of branches) {
+      expect(branch.type).toBe("object");
+      expect(branch.additionalProperties).toBe(false);
+      expect(branch.required).toContain("kind");
+      expect(branch.properties.kind).toHaveProperty("const");
+    }
+  });
+
+  it("structurally admits every parseAction-accepted variant", () => {
+    for (const sample of samples) {
+      const keys = Object.keys(sample);
+      const fits = branches.some(
+        (branch) =>
+          branch.properties.kind?.const === sample.kind &&
+          branch.required.every((r) => keys.includes(r)) &&
+          keys.every((k) => k in branch.properties),
+      );
+      expect(fits, `no anyOf branch admits ${JSON.stringify(sample)}`).toBe(true);
+    }
+  });
+});
+
+describe("FixtureProvider", () => {
+  it("consumes decisions sequentially and resolves nameContains targets", async () => {
+    const file = writeFixture([
+      { kind: "navigate", url: "/loads" },
+      { kind: "click", ref: { role: "button", nameContains: "upload pod" } },
+      { kind: "done", outcome: "success", summary: "uploaded" },
+    ]);
+    const provider = new FixtureProvider(file);
+    expect(provider.name).toBe("fixture");
+    // Whitespace-normalized + case-insensitive: "  Upload   POD " matches "upload pod".
+    const ctx = makeCtx([
+      el("e1", "link", "Home"),
+      el("e2", "button", "  Upload   POD "),
+      el("e3", "button", "Delete load"),
+    ]);
+
+    expect(await provider.decide(ctx)).toEqual({ kind: "navigate", url: "/loads" });
+    expect(await provider.decide(ctx)).toEqual({ kind: "click", ref: "e2" });
+    expect(await provider.decide(ctx)).toEqual({
+      kind: "done",
+      outcome: "success",
+      summary: "uploaded",
+    });
+  });
+
+  it("filters by role when the target gives one", async () => {
+    const file = writeFixture([{ kind: "click", ref: { role: "button", nameContains: "upload" } }]);
+    const provider = new FixtureProvider(file);
+    const ctx = makeCtx([el("e1", "link", "Upload"), el("e2", "button", "Upload")]);
+    expect(await provider.decide(ctx)).toEqual({ kind: "click", ref: "e2" });
+  });
+
+  it("passes plain string refs through untouched", async () => {
+    const file = writeFixture([{ kind: "click", ref: "e7" }]);
+    const provider = new FixtureProvider(file);
+    expect(await provider.decide(makeCtx([]))).toEqual({ kind: "click", ref: "e7" });
+  });
+
+  it("gives up with a diagnostic naming the target and the first 10 element names", async () => {
+    const file = writeFixture([{ kind: "click", ref: { nameContains: "nonexistent thing" } }]);
+    const provider = new FixtureProvider(file);
+    const elements = Array.from({ length: 12 }, (_, i) => el(`e${i + 1}`, "button", `Button ${i + 1}`));
+    const action = await provider.decide(makeCtx(elements));
+
+    expect(action.kind).toBe("give_up");
+    const reason = (action as { kind: "give_up"; reason: string }).reason;
+    expect(reason).toContain('name containing "nonexistent thing"');
+    expect(reason).toContain("first 10 of 12");
+    expect(reason).toContain("'Button 1'");
+    expect(reason).toContain("'Button 10'");
+    expect(reason).not.toContain("'Button 11'");
+  });
+
+  it("gives up when decisions are exhausted", async () => {
+    const file = writeFixture([{ kind: "back" }]);
+    const provider = new FixtureProvider(file);
+    const ctx = makeCtx([]);
+    expect(await provider.decide(ctx)).toEqual({ kind: "back" });
+    expect(await provider.decide(ctx)).toEqual({
+      kind: "give_up",
+      reason: "fixture exhausted after 1 decisions",
+    });
+    // Stays exhausted on further calls.
+    expect(await provider.decide(ctx)).toEqual({
+      kind: "give_up",
+      reason: "fixture exhausted after 1 decisions",
+    });
+  });
+
+  it("reads the file lazily: construction never touches disk", async () => {
+    const provider = new FixtureProvider(path.join(tmpDir, "does-not-exist.json"));
+    await expect(provider.decide(makeCtx([]))).rejects.toThrow(/not readable/);
+  });
+
+  it("rejects files that are not {\"decisions\": [...]}", async () => {
+    const file = path.join(tmpDir, "bad-shape.json");
+    fs.writeFileSync(file, JSON.stringify({ steps: [] }), "utf8");
+    const provider = new FixtureProvider(file);
+    await expect(provider.decide(makeCtx([]))).rejects.toThrow(/{"decisions": \[\.\.\.\]}/);
+  });
+
+  it("names the decision index when a fixture decision fails validation", async () => {
+    const file = writeFixture([{ kind: "wait", ms: 3000 }]);
+    const provider = new FixtureProvider(file);
+    await expect(provider.decide(makeCtx([]))).rejects.toThrow(/Fixture decision #0 invalid/);
+  });
+});
+
+describe("AnthropicProvider", () => {
+  it("constructs without an API key present (client is lazy)", () => {
+    const saved = process.env.ANTHROPIC_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
+    try {
+      const provider = new AnthropicProvider();
+      expect(provider.name).toBe("anthropic");
+      const configured = new AnthropicProvider({ model: "claude-opus-5", effort: "high" });
+      expect(configured.name).toBe("anthropic");
+    } finally {
+      if (saved !== undefined) process.env.ANTHROPIC_API_KEY = saved;
+    }
+  });
+});
+
+describe("createProvider", () => {
+  it("builds the provider matching cfg.type", () => {
+    const fixture = createProvider({ type: "fixture", path: "fixtures/driver.json" });
+    expect(fixture.name).toBe("fixture");
+    expect(fixture).toBeInstanceOf(FixtureProvider);
+
+    const anthropic = createProvider({ type: "anthropic", model: "claude-opus-5", effort: "low" });
+    expect(anthropic.name).toBe("anthropic");
+    expect(anthropic).toBeInstanceOf(AnthropicProvider);
+  });
+});
