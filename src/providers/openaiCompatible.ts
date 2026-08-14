@@ -25,6 +25,9 @@ export interface OpenAiCompatibleConfig {
 const REQUEST_TIMEOUT_MS = 120_000;
 const DEFAULT_TEMPERATURE = 0.2;
 const DEFAULT_MAX_TOKENS = 2048;
+/** 429s and gateway hiccups are routine on free tiers — retry before failing the run. */
+const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
+const RETRY_DELAYS_MS = [15_000, 30_000];
 
 /**
  * Pull the first parseable JSON object out of model output. Exported for
@@ -113,8 +116,25 @@ export class OpenAiCompatibleProvider implements AgentProvider {
     }
   }
 
-  /** One chat completion; returns the raw content string ("" when absent). */
+  /** Chat completion with backoff retries on 429/5xx; returns raw content ("" when absent). */
   private async complete(system: string, userText: string): Promise<string> {
+    let lastError: Error | undefined;
+    for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+      try {
+        return await this.completeOnce(system, userText);
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        const retryable = (err as { retryAfterMs?: number }).retryAfterMs !== undefined;
+        if (!retryable || attempt === RETRY_DELAYS_MS.length) throw lastError;
+        const hinted = (err as { retryAfterMs?: number }).retryAfterMs ?? 0;
+        const delay = Math.min(Math.max(hinted, RETRY_DELAYS_MS[attempt]!), 60_000);
+        await new Promise((r) => setTimeout(r, delay));
+      }
+    }
+    throw lastError ?? new Error("unreachable");
+  }
+
+  private async completeOnce(system: string, userText: string): Promise<string> {
     const headers: Record<string, string> = { "content-type": "application/json" };
     if (this.cfg.apiKeyEnv) {
       const key = process.env[this.cfg.apiKeyEnv];
@@ -163,8 +183,16 @@ export class OpenAiCompatibleProvider implements AgentProvider {
             `listed-but-not-deployed is common; probe GET ${this.cfg.baseUrl}/models and pick a live one: ${body}`,
         );
       }
-      if (res.status === 429) {
-        throw new Error(`rate limited by ${this.cfg.baseUrl} (429) — wait and retry, or lower runs: ${body}`);
+      if (RETRYABLE_STATUS.has(res.status)) {
+        const err = new Error(
+          res.status === 429
+            ? `rate limited by ${this.cfg.baseUrl} (429) after retries — wait, lower runs, or switch models: ${body}`
+            : `${url} returned ${res.status} after retries: ${body}`,
+        );
+        const retryAfter = Number(res.headers.get("retry-after"));
+        (err as { retryAfterMs?: number }).retryAfterMs =
+          Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter * 1000 : 0;
+        throw err;
       }
       throw new Error(`${url} returned ${res.status}: ${body}`);
     }
