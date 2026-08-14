@@ -1,0 +1,52 @@
+{
+  "name": "appbacktest",
+  "version": "0.1.0",
+  "description": "Backtesting for applications: AI-simulated users pursue goals through your real UI, deterministic code verifies what actually happened, and every discovered failure becomes a replayable regression.",
+  "license": "MIT",
+  "author": "Jasroop Sangha",
+  "bin": {
+    "appbacktest": "dist/cli/index.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "dev": "tsx src/cli/index.ts",
+    "example:app": "node examples/pod-app/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "testing",
+    "simulation",
+    "playwright",
+    "ai-agents",
+    "backtesting",
+    "e2e",
+    "qa"
+  ],
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.117.1",
+    "commander": "^15.0.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "picocolors": "^1.1.1",
+    "playwright": "^1.62.1",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.2.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}

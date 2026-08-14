@@ -1,0 +1,588 @@
+/**
+ * AppBacktest — shared type contracts.
+ *
+ * This file is the single source of truth for every data shape that crosses a
+ * module boundary. Modules depend on these types (and each other's public
+ * factories) — never on each other's internals.
+ *
+ * Core philosophy encoded here:
+ *   - The AGENT produces `AgentAction`s (behavior). It never sees selectors.
+ *   - The FRAMEWORK produces `Perception`s, records `StepRecord`s, and issues
+ *     the final `Evaluation`. The agent's belief is recorded but never trusted.
+ *   - Everything strict replay consumes lives INSIDE the `RunRecord`. The
+ *     seed is provenance; replay never re-derives anything from it.
+ */
+
+// ---------------------------------------------------------------------------
+// Seeded randomness
+// ---------------------------------------------------------------------------
+
+/**
+ * Deterministic PRNG. Implemented in core/rng.ts (xmur3 label-path hashing +
+ * mulberry32 streams).
+ */
+export interface RngLike {
+  /** Uniform float in [0, 1). */
+  next(): number;
+  /** Uniform integer in [min, max] inclusive. */
+  int(min: number, max: number): number;
+  /** Pick one element. Throws on empty array. */
+  pick<T>(arr: readonly T[]): T;
+  /** True with probability p. */
+  chance(p: number): boolean;
+  /**
+   * Independent child stream. MUST be a pure function of the label path
+   * (hash(parentLabelPath + ":" + label)) — never derived by consuming parent
+   * draws — so adding a fork or drawing from one stream can never reshuffle
+   * any sibling stream for the same seed.
+   */
+  fork(label: string): RngLike;
+  /** The full label path of this stream (for tests/debugging). */
+  readonly labelPath: string;
+}
+
+// ---------------------------------------------------------------------------
+// Configuration (shape AFTER zod validation + defaults)
+// ---------------------------------------------------------------------------
+
+export type DeviceKind = "desktop" | "mobile";
+export type PatienceLevel = "low" | "normal" | "high";
+
+export interface PersonaConfig {
+  device?: DeviceKind;
+  /** low=12 / normal=20 / high=30 max steps. */
+  patience?: PatienceLevel;
+  /** Probability [0,1] the executor dispatches a click twice (same-task double dispatch). */
+  doubleClickChance?: number;
+  /** Size of generated upload files in KB. */
+  uploadSizeKB?: number;
+  /** Free-text traits passed verbatim to the agent prompt (steers intent). */
+  traits?: string[];
+}
+
+/**
+ * Deterministic checks. All evaluator HTTP traffic is GET-only and issued
+ * through the browser context's request client (cookies/session flow), so
+ * checks see the app as the logged-in user does.
+ */
+export type CheckConfig =
+  | { type: "url"; contains: string }
+  | { type: "text"; contains: string }
+  | { type: "no_text"; contains: string }
+  | { type: "element"; role: string; name: string; at?: string }
+  | { type: "no_element"; role: string; name: string; at?: string }
+  | {
+      /**
+       * State assertion against an app endpoint. `url` may be relative to
+       * app.url. `path` is a dot-path into the JSON body ("loads.0.pods").
+       * `count` asserts array length at path; `equals` asserts strict deep
+       * equality at path; `expectStatus` asserts the HTTP status (default:
+       * any 2xx). At least one assertion field is required.
+       */
+      type: "http";
+      url: string;
+      path?: string;
+      count?: number;
+      equals?: unknown;
+      expectStatus?: number;
+    };
+
+/** `text`/`no_text` also accept `at` (navigate there before evaluating). */
+export type TextCheck = Extract<CheckConfig, { type: "text" | "no_text" }> & {
+  at?: string;
+};
+
+export interface ScenarioConfig {
+  /** Persona key (from `personas`) or an inline persona object. */
+  persona: string | PersonaConfig;
+  goal: string;
+  checks: CheckConfig[];
+}
+
+export interface HttpHookConfig {
+  method: "GET" | "POST";
+  url: string; // may be relative to app.url
+}
+
+export interface AppConfig {
+  name: string;
+  url: string;
+  /**
+   * Optional command to start the app (mirrors Playwright's webServer).
+   * AppBacktest starts it, polls `url` until ready, kills it on exit.
+   */
+  command?: string;
+  /**
+   * Called before each run/replay to reset app state. Part of the determinism
+   * contract for stateful apps: without it, http count/equals checks
+   * self-poison across runs (the CLI warns loudly in that case).
+   */
+  resetHook?: HttpHookConfig;
+}
+
+export type ProviderConfig =
+  | {
+      type: "anthropic";
+      /** Anthropic model id. Default: claude-opus-5. */
+      model?: string;
+      /** Reasoning effort for decision calls. Default: "low". */
+      effort?: "low" | "medium" | "high";
+    }
+  | {
+      /** Fixture-driven decisions from a JSON file — zero API keys, fully deterministic. */
+      type: "fixture";
+      path: string;
+    };
+
+export interface BrowserConfig {
+  headless: boolean;
+  /** Per-action timeout in ms. */
+  actionTimeoutMs: number;
+}
+
+export interface ObserverConfig {
+  /** Regex sources; console messages matching any are ignored. */
+  ignoreConsole: string[];
+  /** URL substrings; failed/HTTP-error requests matching any are ignored. */
+  ignoreRequests: string[];
+}
+
+export interface AppBacktestConfig {
+  app: AppConfig;
+  provider: ProviderConfig;
+  personas: Record<string, PersonaConfig>;
+  scenarios: Record<string, ScenarioConfig>;
+  /** Runs per scenario. Each gets sub-seed `${seed}:${scenarioKey}:${i}`. */
+  runs: number;
+  browser: BrowserConfig;
+  observers: ObserverConfig;
+  /** Artifact root, default ".backtests". */
+  outDir: string;
+}
+
+// ---------------------------------------------------------------------------
+// World plan (seed → deterministic plan)
+// ---------------------------------------------------------------------------
+
+export interface ResolvedPersona {
+  device: DeviceKind;
+  patience: PatienceLevel;
+  maxSteps: number;
+  doubleClickChance: number;
+  uploadSizeKB: number;
+  traits: string[];
+}
+
+export interface RunPlan {
+  runId: string;
+  /** `${seed}:${scenarioKey}:${runIndex}` — stable identity, not position. */
+  subSeed: string;
+  scenarioKey: string;
+  personaKey: string;
+  goal: string;
+  persona: ResolvedPersona;
+  checks: CheckConfig[];
+}
+
+export interface WorldPlan {
+  seed: string;
+  runs: RunPlan[];
+}
+
+// ---------------------------------------------------------------------------
+// Perception — what the agent is allowed to see
+// ---------------------------------------------------------------------------
+
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
+export interface PerceivedElement {
+  /** Ephemeral ref ("e1", frame-scoped "f1:e3") valid until the next perception. */
+  ref: string;
+  /** link | button | textbox | checkbox | radio | select | file | textbox(contenteditable) | generic. */
+  role: string;
+  /** Accessible name: aria-label || aria-labelledby || label[for]/ancestor label || text || placeholder || title || img alt. */
+  name: string;
+  value?: string;
+  disabled?: boolean;
+  /** Another element covers this one's center point (e.g. a modal is open). */
+  occluded?: boolean;
+  /** Present on selects: legal options (capped at 20). */
+  options?: SelectOption[];
+  /** Index among same (role, name) elements — last-resort disambiguation. */
+  nth: number;
+}
+
+export interface Perception {
+  url: string;
+  title: string;
+  /** Visible text, main-content-first, whitespace-collapsed, truncated (≤ ~1500 chars, marked when truncated). */
+  textDigest: string;
+  /** Interactive elements: attached and not hidden (NOT viewport-filtered). Capped at 80. */
+  elements: PerceivedElement[];
+  /** Set when a modal dialog is open (its accessible name). */
+  modalOpen?: string;
+}
+
+/**
+ * Stable target descriptor stored in the trace. Strict replay re-resolves it;
+ * resolution failure or identity mismatch ⇒ DIVERGED, never a wrong click.
+ */
+export interface ResilientLocator {
+  role: string;
+  name: string;
+  nth: number;
+  /** Present for elements inside iframes. */
+  frameUrl?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Actions — the closed vocabulary (schema-enforced at the provider boundary)
+// ---------------------------------------------------------------------------
+
+export type PressableKey = "Escape" | "Enter" | "Tab" | "ArrowDown" | "ArrowUp";
+
+export type AgentAction =
+  | { kind: "navigate"; url: string }
+  | { kind: "click"; ref: string }
+  | { kind: "type"; ref: string; text: string; pressEnter?: boolean }
+  | { kind: "select"; ref: string; value: string }
+  | { kind: "upload"; ref: string }
+  | { kind: "press"; key: PressableKey }
+  | { kind: "scroll"; direction: "up" | "down" }
+  | { kind: "back" }
+  | { kind: "wait"; ms: number } // capped at 2000 by the executor
+  | { kind: "done"; outcome: "success" | "unsure"; summary: string }
+  | { kind: "give_up"; reason: string };
+
+// ---------------------------------------------------------------------------
+// Trace — what actually happened (the replay substrate)
+// ---------------------------------------------------------------------------
+
+export interface PerturbationEvent {
+  /** double_click = second dispatch in the same task, no await between. */
+  kind: "double_click";
+  detail?: string;
+}
+
+export interface DialogEvent {
+  dialogType: string; // alert | confirm | prompt | beforeunload
+  message: string;
+  response: "accept" | "dismiss";
+}
+
+export interface ConsoleEntry {
+  level: "log" | "warning" | "error";
+  text: string;
+}
+
+export interface NetworkEntry {
+  method: string;
+  url: string;
+  /** HTTP status, or -1 for a failed/aborted request. */
+  status: number;
+}
+
+/** Everything that surfaced between the previous drain and now. */
+export interface IncidentDrain {
+  consoleDelta: ConsoleEntry[];
+  networkDelta: NetworkEntry[];
+  /** aria-live / role=alert|status additions (toasts, inline errors). */
+  transientMessages: string[];
+  dialogs: DialogEvent[];
+  /** True if a popup/new tab was adopted as the active page. */
+  tabSwitched: boolean;
+}
+
+export type StepErrorKind =
+  | "stale_target" // node identity changed between perceive and act — NOT clicked
+  | "not_found"
+  | "timeout"
+  | "navigation_error"
+  | "invalid_action";
+
+export interface StepResult {
+  ok: boolean;
+  error?: string;
+  errorKind?: StepErrorKind;
+  urlAfter: string;
+}
+
+export interface StepRecord {
+  index: number;
+  /** ms since the previous step's action finished (replay readiness gate input). */
+  elapsedMs: number;
+  preUrl: string;
+  /** Stable hash of the pre-action perception (url + element descriptors). */
+  perceptionDigest: string;
+  perception: { title: string; elementCount: number };
+  action: AgentAction;
+  /** Captured AT DISPATCH TIME for element-targeted actions. */
+  target?: ResilientLocator;
+  perturbations: PerturbationEvent[];
+  incidents: IncidentDrain;
+  result: StepResult;
+  /** POSIX-style path relative to the run directory. */
+  screenshot?: string;
+  tsStart: string;
+  tsEnd: string;
+}
+
+// ---------------------------------------------------------------------------
+// Observations — framework-detected signals (independent of the agent)
+// ---------------------------------------------------------------------------
+
+export type ObservationKind =
+  | "console_error"
+  | "page_error"
+  | "request_failed"
+  | "http_error"
+  | "action_error"
+  | "dialog_auto_handled"
+  | "gave_up"
+  | "max_steps";
+
+export type Severity = "info" | "warning" | "error";
+
+export interface Observation {
+  kind: ObservationKind;
+  severity: Severity;
+  message: string;
+  stepIndex?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Evaluation — deterministic verdict (never the agent's opinion)
+// ---------------------------------------------------------------------------
+
+export interface CheckResult {
+  check: CheckConfig;
+  passed: boolean;
+  /** True when the check could not be EVALUATED (endpoint down, bad path…) — distinct from evaluating false. */
+  errored: boolean;
+  actual?: unknown;
+  detail?: string;
+  /** Poll attempts before settling (evaluators poll failing checks up to ~4s). */
+  attempts?: number;
+}
+
+/** setup_failed > technical > check_error > assertion (precedence). */
+export type FailureKind = "setup_failed" | "technical" | "check_error" | "assertion";
+
+/** How the agent phase ended — recorded independently of the verdict. */
+export type RunEnding = "done" | "gave_up" | "max_steps" | "fatal";
+
+export interface AgentBelief {
+  /** Structural, schema-enforced — never parsed from prose. give_up ⇒ "failure". */
+  outcome: "success" | "unsure" | "failure";
+  summary: string;
+}
+
+export interface Evaluation {
+  /** SETUP_FAILED runs are quarantined: never counted as pass/fail, never promotable. */
+  verdict: "PASS" | "FAIL" | "SETUP_FAILED";
+  failureKind?: FailureKind;
+  ending: RunEnding;
+  checkResults: CheckResult[];
+  agentBelief: AgentBelief | null;
+  /** belief=success AND failureKind=assertion (checks executed cleanly and failed). */
+  discrepancy: boolean;
+  /** Agent gave up / unsure but checks pass — a UX finding, surfaced not discarded. */
+  reverseDiscrepancy: boolean;
+  /** PASS that carried error-severity observations (surfaced in every report). */
+  passedWithObservations: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// RunRecord — one simulated user's complete, self-contained, replayable history
+// ---------------------------------------------------------------------------
+
+export type ReplayOutcome = "REPRODUCED" | "FIXED" | "DIVERGED" | "INCONCLUSIVE";
+
+export interface UploadArtifact {
+  sizeKB: number;
+  sha256: string;
+  generatorVersion: number;
+}
+
+export interface RunRecord {
+  formatVersion: 1;
+  appbacktestVersion: string;
+  runId: string;
+  /** Provenance only — replay consumes the record, never re-derives from seed. */
+  seed: string;
+  subSeed: string;
+  scenarioKey: string;
+  personaKey: string;
+  goal: string;
+  world: { persona: ResolvedPersona };
+  provider: { type: string; model?: string };
+  app: { name: string; url: string };
+  /** sha256 of normalized config+checks — tamper-EVIDENCE (see DESIGN.md §trust). */
+  configHash: string;
+  /** The checks, frozen verbatim (promoted fixtures grade against THESE). */
+  checks: CheckConfig[];
+  upload?: UploadArtifact;
+  startedAt: string;
+  finishedAt: string;
+  steps: StepRecord[];
+  observations: Observation[];
+  evaluation: Evaluation;
+  replayOf?: string;
+  replayOutcome?: ReplayOutcome;
+  /** First step where strict replay diverged + why (when DIVERGED). */
+  divergence?: { stepIndex: number; reason: string };
+}
+
+// ---------------------------------------------------------------------------
+// Provider — the agent brain boundary
+// ---------------------------------------------------------------------------
+
+/**
+ * History entries are COMPACT one-liners (context-growth contract): the full
+ * perception is sent for the current step only.
+ */
+export interface HistoryEntry {
+  index: number;
+  action: AgentAction;
+  ok: boolean;
+  error?: string;
+  urlAfter: string;
+  /** Toasts/dialog text the user would have seen after this action. */
+  feedback?: string[];
+}
+
+export interface DecideContext {
+  goal: string;
+  persona: ResolvedPersona;
+  appUrl: string;
+  stepIndex: number;
+  maxSteps: number;
+  history: HistoryEntry[];
+  perception: Perception;
+}
+
+export interface AgentProvider {
+  readonly name: string;
+  decide(ctx: DecideContext): Promise<AgentAction>;
+}
+
+// ---------------------------------------------------------------------------
+// Browser driver — the executor boundary
+// ---------------------------------------------------------------------------
+
+export interface DriverOptions {
+  appUrl: string;
+  headless: boolean;
+  device: DeviceKind;
+  actionTimeoutMs: number;
+  /** Absolute dir where the driver may write generated upload files. */
+  workDir: string;
+  /** Upload profile for filechooser interception. */
+  uploadSizeKB: number;
+  /** Sub-seed for deterministic upload-file generation. */
+  uploadSeed: string;
+}
+
+export interface ActOutcome {
+  ok: boolean;
+  error?: string;
+  errorKind?: StepErrorKind;
+  urlAfter: string;
+  perturbations: PerturbationEvent[];
+  /** Descriptor of the node actually dispatched to (act-time identity). */
+  resolvedTarget?: ResilientLocator;
+}
+
+export interface ActOptions {
+  persona: ResolvedPersona;
+  /** Stream dedicated to this run's perturbation rolls. */
+  rng: RngLike;
+  /** Strict replay: apply exactly these, roll nothing. */
+  forcedPerturbations?: PerturbationEvent[];
+}
+
+export interface BrowserDriver {
+  start(): Promise<void>;
+  /** Fresh multi-frame DOM walk (attached + not hidden; occlusion flagged). */
+  perceive(): Promise<Perception>;
+  /** Resolve a ref from the LAST perception into a stable descriptor. */
+  describeRef(ref: string): ResilientLocator | undefined;
+  /** Strict replay: find the current ref matching a recorded descriptor. Fresh walk. */
+  resolveLocator(locator: ResilientLocator): Promise<string | undefined>;
+  /**
+   * Execute one action. Element-targeted actions MUST re-verify the tagged
+   * node still matches its perceive-time {role,name} before dispatch; a
+   * mismatch fails the step with errorKind "stale_target" (never a wrong click).
+   */
+  act(action: AgentAction, opts: ActOptions): Promise<ActOutcome>;
+  screenshot(absPath: string): Promise<void>;
+  /** Incidents accumulated since the last drain (console, network, toasts, dialogs, tab switches). */
+  drainIncidents(): IncidentDrain;
+  visibleText(): Promise<string>;
+  currentUrl(): string;
+  /** GET through the browser context's request client (cookies flow) — evaluators use this. */
+  contextGet(url: string): Promise<{ status: number; body: string }>;
+  close(): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
+// Engine events (streaming CLI output)
+// ---------------------------------------------------------------------------
+
+export interface EngineEvents {
+  onRunStart?(plan: RunPlan): void;
+  onStep?(step: StepRecord): void;
+  onRunEnd?(record: RunRecord): void;
+}
+
+// ---------------------------------------------------------------------------
+// Reporting
+// ---------------------------------------------------------------------------
+
+export interface RunSummary {
+  runId: string;
+  scenarioKey: string;
+  personaKey: string;
+  subSeed: string;
+  verdict: "PASS" | "FAIL" | "SETUP_FAILED";
+  failureKind?: FailureKind;
+  ending: RunEnding;
+  discrepancy: boolean;
+  reverseDiscrepancy: boolean;
+  passedWithObservations: boolean;
+  steps: number;
+  durationMs: number;
+  observationCounts: Partial<Record<ObservationKind, number>>;
+  /** POSIX path relative to outDir. */
+  runDir: string;
+}
+
+/**
+ * No composite score in v0.1 (deliberate): components are reported unbundled —
+ * a single number invites Goodharting and hides variance at small N.
+ */
+export interface BacktestReport {
+  formatVersion: 1;
+  appbacktestVersion: string;
+  app: { name: string; url: string };
+  seed: string;
+  configHash: string;
+  /** Check definitions verbatim — evaluator edits are visible in PR diffs. */
+  checksByScenario: Record<string, CheckConfig[]>;
+  startedAt: string;
+  finishedAt: string;
+  runs: RunSummary[];
+  totals: {
+    total: number;
+    passed: number;
+    failed: number;
+    setupFailed: number;
+    discrepancies: number;
+    reverseDiscrepancies: number;
+    passedWithObservations: number;
+    byFailureKind: Partial<Record<FailureKind, number>>;
+  };
+}
