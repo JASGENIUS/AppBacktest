@@ -70,6 +70,14 @@ const HELPERS_SOURCE = `
 export const WALKER_SOURCE = `((framePrefix) => {
   ${HELPERS_SOURCE}
   const CAND = 'a[href],button,input,select,textarea,summary,[role="button"],[role="link"],[role="tab"],[role="menuitem"],[role="checkbox"],[onclick],[contenteditable="true"]';
+  // Clear tags from the previous walk. Without this an element keeps a ref it
+  // no longer owns, two nodes can share one ref, and a lookup silently
+  // resolves to the wrong element.
+  const clearTags = (root) => {
+    root.querySelectorAll("[data-abt-ref]").forEach((el) => el.removeAttribute("data-abt-ref"));
+    root.querySelectorAll("*").forEach((el) => { if (el.shadowRoot) clearTags(el.shadowRoot); });
+  };
+  clearTags(document);
   const found = [];
   const collect = (root) => {
     root.querySelectorAll(CAND).forEach((el) => found.push(el));
@@ -139,7 +147,19 @@ export const WALKER_SOURCE = `((framePrefix) => {
   }
 
   let modalOpen;
-  const dlg = document.querySelector('[role="dialog"][aria-modal="true"], dialog[open]');
+  // A dialog that is hidden is not open — [hidden], display:none and
+  // zero-size all count as closed, or every app with a pre-rendered modal
+  // would look permanently blocked.
+  const dialogs = Array.from(document.querySelectorAll('[role="dialog"][aria-modal="true"], dialog[open]'));
+  const dlg = dialogs.find((d) => {
+    if (d.hasAttribute("hidden")) return false;
+    if (!d.getClientRects || d.getClientRects().length === 0) return false;
+    try {
+      const cs = getComputedStyle(d);
+      if (cs.display === "none" || cs.visibility === "hidden") return false;
+    } catch (e) {}
+    return true;
+  });
   if (dlg) {
     const h = dlg.querySelector("h1,h2,h3,h4");
     modalOpen = __norm(dlg.getAttribute("aria-label") || (h && h.textContent) || dlg.textContent).slice(0, 80) || "dialog";

@@ -1,0 +1,32 @@
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;background:#f5f6f8;color:#1e2128}
+.top{background:#243447;color:#fff;padding:13px 22px;font-size:15px;display:flex;gap:8px;align-items:baseline}
+.brand{font-weight:700;color:#fff;text-decoration:none}
+.who{margin-left:auto;font-size:12px;opacity:.75}
+main{max-width:860px;margin:0 auto;padding:22px 16px 70px}
+main.narrow{max-width:420px}
+h1{font-size:21px;margin:10px 0 14px}
+h2{font-size:15px;margin:0 0 10px}
+.card{background:#fff;border:1px solid #dfe2e7;padding:18px;margin-bottom:18px}
+label{display:block;font-size:13px;color:#4a515c;margin:12px 0 5px}
+input,select{width:100%;padding:9px 10px;border:1px solid #c9cdd4;font:inherit;background:#fff}
+button{font:inherit;padding:8px 15px;border:1px solid #c9cdd4;background:#fff;cursor:pointer}
+button.primary{background:#243447;border-color:#243447;color:#fff}
+button:disabled{opacity:.45;cursor:default}
+.toolbar{display:flex;gap:9px;align-items:center;margin-bottom:12px}
+.toolbar input{max-width:320px}
+.grid{width:100%;border-collapse:collapse;background:#fff;border:1px solid #dfe2e7}
+.grid th,.grid td{text-align:left;padding:9px 11px;border-bottom:1px solid #eef0f3;font-size:14px}
+.grid th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#6b7280}
+.grid a{color:#1b4f8a;text-decoration:none}
+.pager{display:flex;gap:10px;align-items:center;margin-top:14px}
+.muted{color:#6b7280;font-size:13px}
+.meta{color:#4a515c;margin:4px 0}
+.back{display:inline-block;color:#1b4f8a;text-decoration:none;font-size:13px;margin-bottom:6px}
+.toast{margin-top:12px;padding:10px 12px;background:#e8f2ea;border:1px solid #a3c9b1;color:#1d5233}
+.error{margin-top:10px;padding:9px 11px;background:#fdecec;border:1px solid #e5aaaa;color:#8a2020;font-size:13px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.modal{position:fixed;inset:0;background:rgba(20,24,30,.5);display:flex;align-items:center;justify-content:center}
+.modal[hidden]{display:none}
+.modal-card{background:#fff;padding:22px;width:420px;max-width:92vw;border:1px solid #d4d8de}
+.modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:18px}

@@ -68,6 +68,7 @@ interface WalkedElement {
   value?: string;
   disabled?: boolean;
   occluded?: boolean;
+  sensitive?: boolean;
   options?: Array<{ value: string; label: string }>;
 }
 
@@ -266,6 +267,7 @@ class PlaywrightDriver implements BrowserDriver {
           ...(el.value !== undefined ? { value: el.value } : {}),
           ...(el.disabled ? { disabled: true } : {}),
           ...(el.occluded ? { occluded: true } : {}),
+          ...(el.sensitive ? { sensitive: true } : {}),
           ...(el.options ? { options: el.options } : {}),
         });
       }

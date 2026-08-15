@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDriver } from "../src/browser/driver";
+import { Redactor } from "../src/core/redaction";
 import { generateUploadPng } from "../src/browser/uploads";
 import { sha256 } from "../src/core/hash";
 import { Rng } from "../src/core/rng";
@@ -21,6 +22,8 @@ const PAGE = `<!doctype html><html><head><title>Driver smoke</title></head><body
   <main>
     <a href="/other">Load #38419 details</a>
     <label for="notes-in">Delivery notes</label><input id="notes-in" type="text">
+    <label for="pw">Password</label><input id="pw" type="password">
+    <label for="apikey">API Key</label><input id="apikey" type="text">
     <div id="shadow-host"></div>
     <input type="file" id="pod-file" style="display:none">
     <button id="choose-btn" onclick="document.getElementById('pod-file').click()">Choose photo</button>
@@ -28,6 +31,12 @@ const PAGE = `<!doctype html><html><head><title>Driver smoke</title></head><body
     <button id="counter-btn" onclick="this.dataset.clicks=(Number(this.dataset.clicks||0)+1); document.getElementById('clicks-out').textContent='clicks:'+this.dataset.clicks">Count me</button>
     <span id="clicks-out">clicks:0</span>
     <button id="rename-btn" onclick="document.getElementById('counter-btn').textContent='Totally different'">Rename it</button>
+    <button id="toggle-btn" onclick="document.getElementById('extra').hidden = !document.getElementById('extra').hidden">Toggle section</button>
+    <div id="extra" hidden><button id="extra-a">Extra A</button><button id="extra-b">Extra B</button></div>
+    <button id="open-dlg" onclick="document.getElementById('dlg').hidden=false">Open dialog</button>
+    <div id="dlg" role="dialog" aria-modal="true" aria-label="A dialog" hidden style="position:fixed;inset:0;background:#fff">
+      <button id="close-dlg" onclick="document.getElementById('dlg').hidden=true">Close dialog</button>
+    </div>
     <div style="height:3000px"></div>
     <button id="below-fold">Below the fold</button>
   </main>
@@ -146,6 +155,125 @@ describe("act", () => {
     expect(outcome.ok).toBe(true);
     const text = await driver.visibleText();
     expect(text).toContain("upload.png"); // the page's change handler saw the file
+  });
+});
+
+describe("perception hygiene", () => {
+  it("does not report a hidden dialog as an open modal", async () => {
+    const p = await driver.perceive();
+    expect(p.modalOpen, "a [hidden] dialog must not count as open").toBeUndefined();
+  });
+
+  it("reports a genuinely visible modal", async () => {
+    const p = await driver.perceive();
+    const open = p.elements.find((e) => e.name === "Open dialog")!;
+    await driver.act({ kind: "click", ref: open.ref }, { persona, rng });
+    const after = await driver.perceive();
+    expect(after.modalOpen).toBeTruthy();
+    // ...and closing it clears the flag again
+    const close = after.elements.find((e) => e.name === "Close dialog")!;
+    await driver.act({ kind: "click", ref: close.ref }, { persona, rng });
+    expect((await driver.perceive()).modalOpen).toBeUndefined();
+  });
+
+  it("clears stale refs so no two elements ever share one", async () => {
+    // Toggling swaps which controls are present, so ref indices shift.
+    const p1 = await driver.perceive();
+    const toggle = p1.elements.find((e) => e.name === "Toggle section")!;
+    await driver.act({ kind: "click", ref: toggle.ref }, { persona, rng });
+    const p2 = await driver.perceive();
+    const refs = p2.elements.map((e) => e.ref);
+    expect(new Set(refs).size, "duplicate refs in one perception").toBe(refs.length);
+
+    // Behavioural proof: newly revealed controls must dispatch to themselves.
+    // With stale tags left behind, these refs collide with earlier elements and
+    // the identity check fails with stale_target instead.
+    const extraA = p2.elements.find((e) => e.name === "Extra A")!;
+    const outcome = await driver.act({ kind: "click", ref: extraA.ref }, { persona, rng });
+    expect(outcome.ok, `expected a clean dispatch, got ${outcome.errorKind}: ${outcome.error}`).toBe(true);
+    expect(outcome.resolvedTarget?.name).toBe("Extra A");
+  });
+});
+
+describe("redaction at capture", () => {
+  /**
+   * The privacy guarantee that matters: a secret typed into the real page
+   * must never appear in the recorded evidence. The value IS typed (the app
+   * behaves normally); only what gets written down is masked.
+   */
+  let secretDriver: BrowserDriver;
+  let secretWorkDir: string;
+
+  beforeAll(async () => {
+    secretWorkDir = mkdtempSync(join(tmpdir(), "abt-redact-"));
+    secretDriver = createDriver({
+      appUrl: baseUrl,
+      headless: true,
+      device: "desktop",
+      actionTimeoutMs: 5000,
+      workDir: secretWorkDir,
+      uploadSizeKB: 20,
+      uploadSeed: "redact",
+      redactor: new Redactor({
+        enabled: true,
+        fieldPatterns: ["password", "api[\\s_-]?key"],
+        valuePatterns: ["\\bsk-[A-Za-z0-9]{6,}"],
+        mask: "[redacted]",
+      }),
+    });
+    await secretDriver.start();
+  }, 60_000);
+
+  afterAll(async () => {
+    await secretDriver?.close();
+    rmSync(secretWorkDir, { recursive: true, force: true });
+  });
+
+  it("marks password inputs sensitive and never reads their value back", async () => {
+    const p = await secretDriver.perceive();
+    const pw = p.elements.find((e) => e.name === "Password");
+    expect(pw, "password field not perceived").toBeTruthy();
+    expect(pw!.role).toBe("password");
+    expect(pw!.sensitive).toBe(true);
+  });
+
+  it("masks a value typed into a password field, while still typing it", async () => {
+    const p = await secretDriver.perceive();
+    const pw = p.elements.find((e) => e.name === "Password")!;
+    const outcome = await secretDriver.act(
+      { kind: "type", ref: pw.ref, text: "hunter2-real-secret" },
+      { persona, rng },
+    );
+    expect(outcome.ok).toBe(true);
+    // What the engine will record:
+    expect(outcome.redactedText).toBe("[redacted]");
+    expect(JSON.stringify(outcome)).not.toContain("hunter2");
+    // ...and the app really did receive the value:
+    const after = await secretDriver.perceive();
+    const pwAfter = after.elements.find((e) => e.name === "Password")!;
+    expect(pwAfter.value).toBeUndefined(); // never read back out of the page
+  });
+
+  it("masks a secret-looking field by name, not just by input type", async () => {
+    const p = await secretDriver.perceive();
+    const key = p.elements.find((e) => e.name === "API Key")!;
+    const outcome = await secretDriver.act(
+      { kind: "type", ref: key.ref, text: "sk-abcdef123456" },
+      { persona, rng },
+    );
+    expect(outcome.ok).toBe(true);
+    expect(outcome.redactedText).toBe("[redacted]");
+  });
+
+  it("leaves ordinary fields untouched", async () => {
+    const p = await secretDriver.perceive();
+    const notes = p.elements.find((e) => e.name === "Delivery notes")!;
+    const outcome = await secretDriver.act(
+      { kind: "type", ref: notes.ref, text: "left at the dock" },
+      { persona, rng },
+    );
+    expect(outcome.ok).toBe(true);
+    expect(outcome.redactedText).toBeUndefined();
   });
 });
 

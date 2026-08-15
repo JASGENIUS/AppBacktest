@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Meridian Support — Sign in</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top"><span class="brand">Meridian</span> Support</header>
+  <main class="narrow">
+    <h1>Sign in</h1>
+    <form id="login" class="card" onsubmit="return false">
+      <label for="email">Work email</label>
+      <input id="email" type="email" placeholder="you@company.com" autocomplete="username">
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password">
+      <button id="signin" type="button" class="primary">Sign in</button>
+      <div id="error" role="alert" class="error" hidden></div>
+    </form>
+  </main>
+  <script src="/config.js"></script>
+  <script>
+    const err = document.getElementById("error");
+    document.getElementById("signin").addEventListener("click", async () => {
+      err.hidden = true;
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          email: document.getElementById("email").value,
+          password: document.getElementById("password").value,
+        }),
+      });
+      if (res.ok) { location.href = "/tickets"; return; }
+      err.textContent = "Sign in failed. Check your email and password.";
+      err.hidden = false;
+    });
+  </script>
+</body>
+</html>

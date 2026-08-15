@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tickets — Meridian Support</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top"><a class="brand" href="/tickets">Meridian</a> Support <span id="who" class="who"></span></header>
+  <main>
+    <h1>Open tickets</h1>
+    <div class="toolbar">
+      <label class="sr" for="search">Search tickets</label>
+      <input id="search" type="search" placeholder="Search tickets">
+      <button id="search-btn" type="button">Search</button>
+      <span id="count" class="muted"></span>
+    </div>
+    <div id="loading" class="muted" hidden>Loading…</div>
+    <table class="grid">
+      <thead><tr><th>Ticket</th><th>Customer</th><th>Priority</th><th>Status</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="pager">
+      <button id="prev" type="button">Previous page</button>
+      <span id="pageinfo" class="muted"></span>
+      <button id="next" type="button">Next page</button>
+    </div>
+  </main>
+  <script src="/config.js"></script>
+  <script src="/tickets.js"></script>
+</body>
+</html>

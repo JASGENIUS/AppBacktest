@@ -173,7 +173,7 @@ function noFeedbackAfterCommit(record: RunRecord): Signal | null {
  */
 /** Give-ups caused by AppBacktest itself, not by the application's design. */
 function isHarnessFailure(reason: string): boolean {
-  return /provider (produced|refused|error)|invalid action|no JSON object|rate limit|fixture exhausted|API key/i.test(
+  return /provider (produced|refused|error)|invalid action|no JSON object|rate limit|fixture (exhausted|target not found)|API key|unknown ref/i.test(
     reason,
   );
 }

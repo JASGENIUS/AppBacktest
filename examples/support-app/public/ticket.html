@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ticket — Meridian Support</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top"><a class="brand" href="/tickets">Meridian</a> Support</header>
+  <main>
+    <a href="/tickets" class="back">← All tickets</a>
+    <h1 id="subject">Ticket</h1>
+    <p class="meta"><span id="customer"></span> · <priority-badge id="badge"></priority-badge></p>
+    <p id="status-line" class="meta"></p>
+
+    <section class="card">
+      <h2>Escalate</h2>
+      <p class="muted">Escalating notifies the on-call team.</p>
+      <button id="escalate-btn" type="button" class="primary">Escalate ticket</button>
+      <div id="toast" role="status" aria-live="polite" class="toast" hidden></div>
+    </section>
+
+    <section class="card">
+      <h2>Customer notes</h2>
+      <iframe id="notes" title="Customer notes" style="width:100%;height:90px;border:1px solid #d8dbe0"></iframe>
+    </section>
+
+    <!-- Three-step wizard, in a modal -->
+    <div id="wizard" class="modal" role="dialog" aria-modal="true" aria-label="Escalate ticket" hidden>
+      <div class="modal-card">
+        <h2 id="step-title">Step 1 of 3 — Reason</h2>
+
+        <div class="step" id="step-1">
+          <label for="reason">Why does this need escalating?</label>
+          <input id="reason" type="text" placeholder="Describe the impact">
+        </div>
+
+        <div class="step" id="step-2" hidden>
+          <label for="severity">Severity</label>
+          <select id="severity">
+            <option value="">Choose a severity…</option>
+            <option value="sev3">Sev 3 — degraded</option>
+            <option value="sev2">Sev 2 — major</option>
+            <option value="sev1">Sev 1 — outage</option>
+          </select>
+          <div id="step-error" role="alert" class="error" hidden></div>
+        </div>
+
+        <div class="step" id="step-3" hidden>
+          <label for="contact">On-call contact</label>
+          <input id="contact" type="text" placeholder="name or rota">
+        </div>
+
+        <div class="modal-actions">
+          <button id="wizard-back" type="button">Back</button>
+          <button id="wizard-next" type="button" class="primary">Next</button>
+          <button id="wizard-submit" type="button" class="primary" hidden>Submit escalation</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="/config.js"></script>
+  <script src="/ticket.js"></script>
+</body>
+</html>

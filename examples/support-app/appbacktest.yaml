@@ -1,0 +1,52 @@
+# Meridian Support — the hard example.
+#
+# Exercises auth, search, pagination, a 3-step modal wizard, shadow DOM and an
+# iframe, against four different classes of planted bug. Uses a recorded
+# fixture so it runs with no API key; swap the provider block for a live model
+# to watch one work it out unaided.
+
+app:
+  name: Meridian Support
+  url: http://localhost:4175
+  command: node server.js
+  resetHook: { method: POST, url: /api/reset }
+
+provider:
+  type: fixture
+  path: ./fixtures/agent.json
+
+personas:
+  support_lead:
+    device: desktop
+    patience: high          # a long workflow: sign in, find, escalate
+    doubleClickChance: 0.0
+    traits: ["works tickets all day", "trusts the interface"]
+
+scenarios:
+  # BUG A — optimistic UI: the interface announces success while the server
+  # rejects the escalation. The state check is what catches the lie.
+  escalate_ticket:
+    persona: support_lead
+    goal: >
+      Sign in as lead@meridian.test with the password "support123". Find ticket
+      #1027 about the payments dashboard, escalate it with the reason
+      "Customer blocked from billing", severity Sev 2 and on-call contact
+      "payments-rota", and make sure the escalation is really recorded.
+    checks:
+      - { type: url, contains: "/tickets/1027" }
+      - { type: transient, contains: "escalated" }
+      # The truth the toast cannot fake:
+      - { type: http, url: /api/state, path: "tickets.26.escalations", equals: 1 }
+      - { type: http, url: /api/tickets/1027, path: "status", equals: "escalated" }
+
+runs: 2
+browser: { headless: true, actionTimeoutMs: 8000 }
+
+source:
+  enabled: true
+  root: .
+
+ux:
+  level: conservative
+  minConfidence: 0.7
+  maxRecommendations: 3

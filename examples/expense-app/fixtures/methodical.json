@@ -1,0 +1,15 @@
+{
+  "description": "Deterministic decision list for the Cove expense flow, in the order a methodical user works: fill the form top to bottom, then add the note last. That ordering is what trips the planted state-desync bug (closing the note modal resets the already-chosen category), so this fixture reproduces the bug with no API key.",
+  "decisions": [
+    { "kind": "click", "ref": { "role": "link", "nameContains": "New expense" } },
+    { "kind": "type", "ref": { "role": "textbox", "nameContains": "Description" }, "text": "Client lunch" },
+    { "kind": "type", "ref": { "role": "textbox", "nameContains": "Amount" }, "text": "48.20" },
+    { "kind": "select", "ref": { "role": "select", "nameContains": "Category" }, "value": "meals" },
+    { "kind": "click", "ref": { "role": "button", "nameContains": "Add note" } },
+    { "kind": "type", "ref": { "role": "textbox", "nameContains": "Note" }, "text": "Client lunch with Acme" },
+    { "kind": "click", "ref": { "role": "button", "nameContains": "Save note" } },
+    { "kind": "click", "ref": { "role": "button", "nameContains": "Submit expense" } },
+    { "kind": "wait", "ms": 1500 },
+    { "kind": "done", "outcome": "success", "summary": "Submitted the client lunch expense as Meals with the note attached." }
+  ]
+}

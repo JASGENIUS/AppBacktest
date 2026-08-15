@@ -1,0 +1,45 @@
+# Cove expenses — zero-key deterministic variant.
+# Same app and checks as appbacktest.yaml, but decisions come from a recorded
+# fixture instead of a live model, so this runs identically on any machine with
+# no API key. Used by scripts/verify-features.mjs.
+
+app:
+  name: Cove Expenses
+  url: http://localhost:4174
+  command: node server.js
+  resetHook: { method: POST, url: /api/reset }
+
+provider:
+  type: fixture
+  path: ./fixtures/methodical.json
+
+personas:
+  methodical:
+    device: desktop
+    patience: normal
+    doubleClickChance: 0.0
+    traits: ["works through forms top to bottom", "leaves optional extras until the end"]
+
+scenarios:
+  submit_expense:
+    persona: methodical
+    goal: >
+      Submit a new expense for a client lunch that cost 48.20, categorised as
+      Meals, with the note "Client lunch with Acme" attached. Make sure the
+      expense is actually saved before you finish.
+    checks:
+      - { type: transient, contains: "Expense submitted" }
+      - { type: http, url: /api/expenses, count: 3 }
+      - { type: http, url: /api/expenses, path: "2.category", equals: "meals" }
+
+runs: 2
+browser: { headless: true, actionTimeoutMs: 8000 }
+
+source:
+  enabled: true
+  root: .
+
+ux:
+  level: conservative
+  minConfidence: 0.7
+  maxRecommendations: 3

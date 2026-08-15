@@ -1,0 +1,23 @@
+{
+  "description": "Sign in, search for the target ticket, open it, and drive the three-step escalate wizard to completion. Deterministic stand-in for a live model on the Meridian flow.",
+  "decisions": [
+    { "kind": "type", "ref": { "role": "textbox", "nameContains": "Work email" }, "text": "lead@meridian.test" },
+    { "kind": "type", "ref": { "role": "password", "nameContains": "Password" }, "text": "support123" },
+    { "kind": "click", "ref": { "role": "button", "nameContains": "Sign in" } },
+    { "kind": "wait", "ms": 800 },
+    { "kind": "type", "ref": { "role": "textbox", "nameContains": "Search tickets" }, "text": "payments dashboard" },
+    { "kind": "click", "ref": { "role": "button", "nameContains": "Search" } },
+    { "kind": "wait", "ms": 600 },
+    { "kind": "click", "ref": { "role": "link", "nameContains": "Payments dashboard blank" } },
+    { "kind": "wait", "ms": 600 },
+    { "kind": "click", "ref": { "role": "button", "nameContains": "Escalate ticket" } },
+    { "kind": "type", "ref": { "role": "textbox", "nameContains": "Why does this need escalating" }, "text": "Customer blocked from billing" },
+    { "kind": "click", "ref": { "role": "button", "nameContains": "Next" } },
+    { "kind": "select", "ref": { "role": "select", "nameContains": "Severity" }, "value": "sev2" },
+    { "kind": "click", "ref": { "role": "button", "nameContains": "Next" } },
+    { "kind": "type", "ref": { "role": "textbox", "nameContains": "On-call contact" }, "text": "payments-rota" },
+    { "kind": "click", "ref": { "role": "button", "nameContains": "Submit escalation" } },
+    { "kind": "wait", "ms": 2000 },
+    { "kind": "done", "outcome": "success", "summary": "Signed in, found ticket #1027, and escalated it as Sev 2 to payments-rota. The interface confirmed the escalation." }
+  ]
+}
