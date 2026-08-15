@@ -97,6 +97,63 @@ const scenarioSchema = z
   })
   .strict();
 
+/**
+ * Defaults chosen to stop the obvious secrets reaching disk without the user
+ * configuring anything. Matched case-insensitively.
+ */
+const DEFAULT_FIELD_PATTERNS = [
+  "password",
+  "passcode",
+  "\\bpin\\b",
+  "secret",
+  "token",
+  "api[\\s_-]?key",
+  "auth",
+  "card|cvv|cvc|security code",
+  "ssn|social security",
+  "account number",
+];
+const DEFAULT_VALUE_PATTERNS = [
+  "\\bsk-[A-Za-z0-9_-]{12,}",          // OpenAI-style keys
+  "\\bnvapi-[A-Za-z0-9_-]{12,}",       // NVIDIA
+  "\\bghp_[A-Za-z0-9]{20,}",           // GitHub
+  "eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}", // JWT
+  "\\b\\d{13,16}\\b",                  // card-length digit runs
+];
+
+const redactionSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    fieldPatterns: z.array(z.string()).default(DEFAULT_FIELD_PATTERNS),
+    valuePatterns: z.array(z.string()).default(DEFAULT_VALUE_PATTERNS),
+    mask: z.string().default("[redacted]"),
+  })
+  .strict();
+
+const uxSchema = z
+  .object({
+    level: z.enum(["off", "conservative", "balanced", "detailed"]).default("conservative"),
+    minConfidence: z.number().min(0).max(1).default(0.7),
+    maxRecommendations: z.number().int().min(0).max(50).default(3),
+  })
+  .strict();
+
+const sourceSchema = z
+  .object({
+    // Read-only correlation; AppBacktest never writes to the user's source.
+    enabled: z.boolean().default(false),
+    root: z.string().min(1).optional(),
+    maxFiles: z.number().int().positive().max(20000).default(4000),
+  })
+  .strict();
+
+const replaySchema = z
+  .object({
+    beforeMs: z.number().int().min(0).max(600000).default(20000),
+    afterMs: z.number().int().min(0).max(600000).default(10000),
+  })
+  .strict();
+
 const browserSchema = z
   .object({
     headless: z.boolean().default(true),
@@ -122,6 +179,15 @@ const configSchema = z
     runs: z.number().int().min(1).max(50).default(1),
     browser: browserSchema.default({ headless: true, actionTimeoutMs: 8000, watch: false }),
     observers: observerSchema.default({ ignoreConsole: [], ignoreRequests: [] }),
+    redaction: redactionSchema.default({
+      enabled: true,
+      fieldPatterns: DEFAULT_FIELD_PATTERNS,
+      valuePatterns: DEFAULT_VALUE_PATTERNS,
+      mask: "[redacted]",
+    }),
+    ux: uxSchema.default({ level: "conservative", minConfidence: 0.7, maxRecommendations: 3 }),
+    source: sourceSchema.default({ enabled: false, maxFiles: 4000 }),
+    replay: replaySchema.default({ beforeMs: 20000, afterMs: 10000 }),
     outDir: z.string().min(1).default(".backtests"),
   })
   .strict()

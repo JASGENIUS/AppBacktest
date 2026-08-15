@@ -60,3 +60,13 @@ scenarios:
 
 runs: 2
 browser: { headless: true, actionTimeoutMs: 8000 }
+
+# Read-only: AppBacktest reads these files to suggest WHERE a problem may
+# originate. It never writes to them.
+source:
+  enabled: true
+  root: .
+
+# Evidence-backed only, and capped. Set level: off to disable entirely.
+ux:
+  level: conservative

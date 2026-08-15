@@ -30,6 +30,7 @@ const HELPERS_SOURCE = `
       if (ty === "checkbox") return "checkbox";
       if (ty === "radio") return "radio";
       if (ty === "file") return "file";
+      if (ty === "password") return "password";
       if (ty === "button" || ty === "submit" || ty === "reset") return "button";
       return "textbox";
     }
@@ -125,6 +126,8 @@ export const WALKER_SOURCE = `((framePrefix) => {
     };
     if (el.disabled === true || el.getAttribute("aria-disabled") === "true") item.disabled = true;
     if (occluded) item.occluded = true;
+    // Never read the VALUE of a password field back out of the page.
+    if (i.role === "password") item.sensitive = true;
     if (i.role === "textbox" || i.role === "select") {
       const v = el.value !== undefined ? String(el.value) : "";
       if (v) item.value = v.slice(0, 100);

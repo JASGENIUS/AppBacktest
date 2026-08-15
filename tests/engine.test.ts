@@ -42,6 +42,10 @@ function makeConfig(overrides: Partial<AppBacktestConfig["app"]> = {}): AppBackt
     runs: 1,
     browser: { headless: true, actionTimeoutMs: 1000 },
     observers: { ignoreConsole: [], ignoreRequests: [] },
+    redaction: { enabled: true, fieldPatterns: ["password"], valuePatterns: [], mask: "[redacted]" },
+    ux: { level: "conservative", minConfidence: 0.7, maxRecommendations: 3 },
+    source: { enabled: false, maxFiles: 100 },
+    replay: { beforeMs: 20000, afterMs: 10000 },
     outDir: ".backtests",
   };
 }

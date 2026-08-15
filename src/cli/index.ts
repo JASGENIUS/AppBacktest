@@ -15,6 +15,7 @@ import { join } from "node:path";
 import {
   appbacktestVersion,
   loadContext,
+  rebuildReport,
   regressionAll,
   replayById,
   runBacktest,
@@ -94,6 +95,22 @@ program
               ? 2
               : 3;
       process.exit(code);
+    } catch (err) {
+      die(err);
+    }
+  });
+
+program
+  .command("report")
+  .description("regenerate the findings report and replay viewers from recorded runs (no app needed)")
+  .option("--config <path>", "config file", "appbacktest.yaml")
+  .option("--open", "print the path to open", false)
+  .action((opts: { config: string }) => {
+    try {
+      const path = rebuildReport(opts.config);
+      console.log(pc.green(`✓ report written`));
+      console.log(`  ${path.replace(/\\/g, "/")}`);
+      console.log(pc.dim("  each finding links to a replay you can scrub through"));
     } catch (err) {
       die(err);
     }

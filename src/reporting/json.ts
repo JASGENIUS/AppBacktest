@@ -4,10 +4,12 @@ import type {
   AppBacktestConfig,
   BacktestReport,
   CheckConfig,
+  Finding,
   ObservationKind,
   RunRecord,
   RunSummary,
 } from "../core/types";
+import { countByCategory } from "../findings";
 
 export function buildReport(args: {
   records: RunRecord[];
@@ -17,6 +19,7 @@ export function buildReport(args: {
   appbacktestVersion: string;
   startedAt: string;
   finishedAt: string;
+  findings?: Finding[];
 }): BacktestReport {
   const { records, config } = args;
 
@@ -29,6 +32,7 @@ export function buildReport(args: {
     reverseDiscrepancies: 0,
     passedWithObservations: 0,
     byFailureKind: {},
+    actions: 0,
   };
   for (const record of records) {
     const ev = record.evaluation;
@@ -50,6 +54,9 @@ export function buildReport(args: {
     checksByScenario[key] = scenario.checks;
   }
 
+  totals.actions = records.reduce((n, r) => n + r.steps.length, 0);
+  const findings = args.findings ?? [];
+
   return {
     formatVersion: 1,
     appbacktestVersion: args.appbacktestVersion,
@@ -61,6 +68,8 @@ export function buildReport(args: {
     finishedAt: args.finishedAt,
     runs: records.map(summarizeRun),
     totals,
+    findings,
+    findingCounts: countByCategory(findings),
   };
 }
 

@@ -8,6 +8,7 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { Rng } from "../core/rng";
+import { Redactor } from "../core/redaction";
 import { sha256, stableStringify } from "../core/hash";
 import { resolveUrl } from "../core/config";
 import { runChecks, evaluate } from "../evaluators";
@@ -148,6 +149,7 @@ export async function executeRun(plan: RunPlan, deps: RunDeps): Promise<RunRecor
     device: plan.persona.device,
     actionTimeoutMs: config.browser.actionTimeoutMs,
     ...(config.browser.watch ? { watch: true, goal: plan.goal } : {}),
+    redactor: new Redactor(config.redaction),
     workDir: runDirAbs,
     uploadSizeKB: plan.persona.uploadSizeKB,
     uploadSeed: `${plan.subSeed}:upload`,
@@ -197,13 +199,24 @@ export async function executeRun(plan: RunPlan, deps: RunDeps): Promise<RunRecor
       const incidents = driver.drainIncidents();
       prevEnd = Date.now();
 
+      // A sensitive field's value never reaches the record — the trace keeps
+      // the mask, so replay and reports carry no secret.
+      const recordedAction: AgentAction =
+        outcome.redactedText !== undefined && action.kind === "type"
+          ? { ...action, text: outcome.redactedText }
+          : action;
+
       const step: StepRecord = {
         index: i,
         elapsedMs,
         preUrl: perception.url,
         perceptionDigest: digest,
-        perception: { title: perception.title, elementCount: perception.elements.length },
-        action,
+        perception: {
+          title: perception.title,
+          elementCount: perception.elements.length,
+          ...(perception.modalOpen ? { modalOpen: perception.modalOpen } : {}),
+        },
+        action: recordedAction,
         ...(outcome.resolvedTarget ?? preTarget
           ? { target: outcome.resolvedTarget ?? preTarget }
           : {}),
@@ -224,7 +237,7 @@ export async function executeRun(plan: RunPlan, deps: RunDeps): Promise<RunRecor
 
       history.push({
         index: i,
-        action,
+        action: recordedAction,
         ok: outcome.ok,
         ...(outcome.error ? { error: outcome.error } : {}),
         urlAfter: outcome.urlAfter,

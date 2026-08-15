@@ -110,6 +110,91 @@ agent's perception and cannot receive pointer events, so watching a run never
 changes what the run does. Use plain `--headed` for a real-speed browser
 window without the overlay.
 
+### Findings, evidence and replay
+
+Every session produces a categorised report — real problems first, then
+usability issues, then quality-of-life notes. Nothing is a bare AI claim:
+each finding carries the reproduction trail, the verbatim evidence, a
+timestamp, and a replay you can scrub through.
+
+![Findings report](docs/report.png)
+
+```bash
+npx appbacktest report      # re-derive findings + replays from recorded runs
+```
+
+`report` is pure post-processing: no browser, no app, no LLM, no cost. It
+works on artifacts a colleague committed.
+
+**Open Replay** opens a self-contained page beside that run's screenshots —
+playback on the left, a merged timeline of actions *and* application events on
+the right. Click any event to jump there; findings appear as markers.
+
+![Replay viewer](docs/replay.png)
+
+Findings are **grouped, not duplicated**: the same defect across twenty runs is
+one finding with twenty occurrences and a `reproduced 7 / 20 attempts` count,
+and repeat reproduction raises its confidence.
+
+### Usability vs bugs
+
+Some things technically work but are needlessly confusing. Those are reported
+**separately from bugs**, never mixed in:
+
+| Category | Meaning |
+|---|---|
+| Critical failure / Functional bug | something is broken |
+| Usability issue | it works, but caused real friction |
+| Quality-of-life recommendation | an evidence-backed improvement |
+
+Recommendations come **only from friction actually encountered while using the
+app** — content saved but nowhere to be found afterwards, a commit with no
+visible confirmation, a workflow that succeeded while the user concluded it
+failed, repeated retries, navigation churn. There is deliberately no path from
+"the model had an opinion" to a finding: the detectors are deterministic and
+the LLM is never asked. You will not get *make this button bigger*.
+
+```yaml
+ux:
+  level: conservative     # off | conservative | balanced | detailed
+  minConfidence: 0.7
+  maxRecommendations: 3   # three meaningful notes beat thirty speculative ones
+```
+
+`level: off` disables the whole system without touching bug detection.
+
+### Read-only source correlation
+
+Point AppBacktest at your code and findings gain a *possible code location* —
+derived from runtime evidence (the endpoint that 500'd, the label that failed),
+not from reading your repo for style.
+
+```yaml
+source:
+  enabled: true
+  root: ./src
+```
+
+It only ever reads. Every report states **Source code modified: no**, and the
+module imports no filesystem write API at all, so it cannot patch, commit, or
+"helpfully fix" anything.
+
+### Privacy
+
+Sensitive values are masked **at capture**, so they never reach a trace,
+report, or the model's context — password fields and secret-looking field
+names are masked by identity, and credential-shaped strings (API keys, JWTs,
+long card-like digit runs) are masked wherever they appear, including inside
+URLs.
+
+```yaml
+redaction:
+  enabled: true
+  fieldPatterns: ["password", "api[\\s_-]?key", "card|cvv"]
+  valuePatterns: ["\\bsk-[A-Za-z0-9_-]{12,}"]
+  mask: "[redacted]"
+```
+
 ### With a real model
 
 ```bash

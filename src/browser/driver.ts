@@ -27,6 +27,7 @@ import type {
   PerturbationEvent,
   ResilientLocator,
   StepErrorKind,
+  TransientEvent,
 } from "../core/types";
 import {
   FILE_INPUT_SOURCE,
@@ -37,6 +38,7 @@ import {
   WATCH_UPDATE_SOURCE,
 } from "./perception";
 import { generateUploadPng } from "./uploads";
+import { Redactor } from "../core/redaction";
 
 const WAIT_CAP_MS = 2000;
 /** Watch mode pacing: slow every Playwright op, and let the cursor glide land. */
@@ -87,6 +89,7 @@ class PlaywrightDriver implements BrowserDriver {
   private consoleBuf: ConsoleEntry[] = [];
   private networkBuf: NetworkEntry[] = [];
   private transientBuf: string[] = [];
+  private transientEventBuf: TransientEvent[] = [];
   private dialogBuf: DialogEvent[] = [];
   private tabSwitched = false;
   /** context.on("page") fires for our own first page too — never wire twice. */
@@ -94,7 +97,14 @@ class PlaywrightDriver implements BrowserDriver {
   /** Actions dispatched so far — shown in the watch HUD. */
   private actCount = 0;
 
-  constructor(private opts: DriverOptions) {}
+  /** Applied as evidence is captured — secrets never reach the trace. */
+  private readonly redactor: Redactor;
+
+  constructor(private opts: DriverOptions) {
+    this.redactor =
+      opts.redactor ??
+      new Redactor({ enabled: false, fieldPatterns: [], valuePatterns: [], mask: "[redacted]" });
+  }
 
   async start(): Promise<void> {
     mkdirSync(this.opts.workDir, { recursive: true });
@@ -123,7 +133,9 @@ class PlaywrightDriver implements BrowserDriver {
     // they fire — a document that navigates away takes its DOM with it.
     await this.context.exposeFunction("__abtPushTransient", (text: string) => {
       if (typeof text === "string" && text.length > 0) {
-        this.transientBuf.push(text.slice(0, 300));
+        const safe = this.redactor.text(text.slice(0, 300));
+        this.transientBuf.push(safe);
+        this.transientEventBuf.push({ text: safe, atMs: Date.now() });
       }
     });
     await this.context.addInitScript(TRANSIENT_OBSERVER_SOURCE);
@@ -157,28 +169,47 @@ class PlaywrightDriver implements BrowserDriver {
     page.on("console", (msg) => {
       const type = msg.type();
       if (type === "error" || type === "warning") {
-        this.consoleBuf.push({ level: type === "error" ? "error" : "warning", text: msg.text().slice(0, 400) });
+        this.consoleBuf.push({
+          level: type === "error" ? "error" : "warning",
+          text: this.redactor.text(msg.text().slice(0, 400)),
+          atMs: Date.now(),
+        });
       }
     });
     page.on("pageerror", (err) => {
-      this.consoleBuf.push({ level: "error", text: `pageerror: ${String(err.message ?? err).slice(0, 400)}` });
+      this.consoleBuf.push({
+        level: "error",
+        text: this.redactor.text(`pageerror: ${String(err.message ?? err).slice(0, 400)}`),
+        atMs: Date.now(),
+      });
     });
     page.on("requestfailed", (req) => {
       const failure = req.failure()?.errorText ?? "";
       if (failure.includes("ERR_ABORTED")) return; // navigation-cancelled noise
-      this.networkBuf.push({ method: req.method(), url: req.url(), status: -1 });
+      this.networkBuf.push({
+        method: req.method(),
+        url: this.redactor.url(req.url()),
+        status: -1,
+        atMs: Date.now(),
+      });
     });
     page.on("response", (res) => {
       if (res.status() >= 400) {
-        this.networkBuf.push({ method: res.request().method(), url: res.url(), status: res.status() });
+        this.networkBuf.push({
+          method: res.request().method(),
+          url: this.redactor.url(res.url()),
+          status: res.status(),
+          atMs: Date.now(),
+        });
       }
     });
     page.on("dialog", (dialog) => {
       const accept = dialog.type() !== "beforeunload";
       this.dialogBuf.push({
         dialogType: dialog.type(),
-        message: dialog.message().slice(0, 300),
+        message: this.redactor.text(dialog.message().slice(0, 300)),
         response: accept ? "accept" : "dismiss",
+        atMs: Date.now(),
       });
       (accept ? dialog.accept() : dialog.dismiss()).catch(() => {});
     });
@@ -284,6 +315,8 @@ class PlaywrightDriver implements BrowserDriver {
 
     try {
       let resolvedTarget: ResilientLocator | undefined;
+      /** Set when the typed value must not be written to the trace. */
+      let redactedText: string | undefined;
 
       if (
         action.kind === "click" ||
@@ -341,6 +374,11 @@ class PlaywrightDriver implements BrowserDriver {
             await loc.click({ timeout });
           }
         } else if (action.kind === "type") {
+          // The real value is typed; only the RECORD is masked. Determined by
+          // the field's identity (password input / sensitive-looking name).
+          if (this.redactor.isSensitiveField(identity.name, identity.role)) {
+            redactedText = this.redactor.maskField();
+          }
           await loc.fill(action.text, { timeout });
           if (action.pressEnter) await loc.press("Enter", { timeout });
         } else if (action.kind === "select") {
@@ -403,9 +441,10 @@ class PlaywrightDriver implements BrowserDriver {
       }
       return {
         ok: true,
-        urlAfter: this.mustPage().url(),
+        urlAfter: this.redactor.url(this.mustPage().url()),
         perturbations,
         ...(resolvedTarget ? { resolvedTarget } : {}),
+        ...(redactedText !== undefined ? { redactedText } : {}),
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -489,7 +528,11 @@ class PlaywrightDriver implements BrowserDriver {
       const found = (await page.evaluate(
         "(() => { const a = window.__abt_transients || []; window.__abt_transients = []; return a; })()",
       )) as string[];
-      for (const t of found) this.transientBuf.push(t);
+      for (const t of found) {
+        const safe = this.redactor.text(t);
+        this.transientBuf.push(safe);
+        this.transientEventBuf.push({ text: safe, atMs: Date.now() });
+      }
     } catch {
       // page navigating — transients from the old document are gone; fine.
     }
@@ -500,12 +543,14 @@ class PlaywrightDriver implements BrowserDriver {
       consoleDelta: this.consoleBuf,
       networkDelta: this.networkBuf,
       transientMessages: this.transientBuf,
+      transientEvents: this.transientEventBuf,
       dialogs: this.dialogBuf,
       tabSwitched: this.tabSwitched,
     };
     this.consoleBuf = [];
     this.networkBuf = [];
     this.transientBuf = [];
+    this.transientEventBuf = [];
     this.dialogBuf = [];
     this.tabSwitched = false;
     return drain;

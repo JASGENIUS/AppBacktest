@@ -181,6 +181,10 @@ export interface AppBacktestConfig {
   runs: number;
   browser: BrowserConfig;
   observers: ObserverConfig;
+  redaction: RedactionConfig;
+  ux: UxConfig;
+  source: SourceConfig;
+  replay: ReplayConfig;
   /** Artifact root, default ".backtests". */
   outDir: string;
 }
@@ -236,6 +240,11 @@ export interface PerceivedElement {
   occluded?: boolean;
   /** Present on selects: legal options (capped at 20). */
   options?: SelectOption[];
+  /**
+   * Password field, or a name matching the redaction patterns. Text typed
+   * into it is masked before it ever reaches the trace.
+   */
+  sensitive?: boolean;
   /** Index among same (role, name) elements — last-resort disambiguation. */
   nth: number;
 }
@@ -296,11 +305,14 @@ export interface DialogEvent {
   dialogType: string; // alert | confirm | prompt | beforeunload
   message: string;
   response: "accept" | "dismiss";
+  atMs?: number;
 }
 
 export interface ConsoleEntry {
   level: "log" | "warning" | "error";
   text: string;
+  /** Epoch ms when observed — powers the replay timeline. */
+  atMs?: number;
 }
 
 export interface NetworkEntry {
@@ -308,6 +320,13 @@ export interface NetworkEntry {
   url: string;
   /** HTTP status, or -1 for a failed/aborted request. */
   status: number;
+  atMs?: number;
+}
+
+/** A toast / aria-live message with the moment it appeared. */
+export interface TransientEvent {
+  text: string;
+  atMs: number;
 }
 
 /** Everything that surfaced between the previous drain and now. */
@@ -316,6 +335,8 @@ export interface IncidentDrain {
   networkDelta: NetworkEntry[];
   /** aria-live / role=alert|status additions (toasts, inline errors). */
   transientMessages: string[];
+  /** Same messages with timestamps, for the replay timeline. */
+  transientEvents?: TransientEvent[];
   dialogs: DialogEvent[];
   /** True if a popup/new tab was adopted as the active page. */
   tabSwitched: boolean;
@@ -342,7 +363,12 @@ export interface StepRecord {
   preUrl: string;
   /** Stable hash of the pre-action perception (url + element descriptors). */
   perceptionDigest: string;
-  perception: { title: string; elementCount: number };
+  perception: {
+    title: string;
+    elementCount: number;
+    /** Accessible name of an open modal, when one was showing. */
+    modalOpen?: string;
+  };
   action: AgentAction;
   /** Captured AT DISPATCH TIME for element-targeted actions. */
   target?: ResilientLocator;
@@ -462,6 +488,153 @@ export interface RunRecord {
 }
 
 // ---------------------------------------------------------------------------
+// Timeline & replay evidence
+//
+// The timeline is DERIVED from a RunRecord — actions the simulated user took
+// interleaved with events the application produced, on one clock. It is what
+// a human scrubs through when answering "show me exactly what happened".
+// ---------------------------------------------------------------------------
+
+export type TimelineKind =
+  | "action"
+  | "navigation"
+  | "console"
+  | "network"
+  | "transient"
+  | "dialog"
+  | "error"
+  | "finding";
+
+export interface TimelineEntry {
+  /** Milliseconds since the session started. */
+  atMs: number;
+  kind: TimelineKind;
+  /** Step this belongs to, when applicable. */
+  stepIndex?: number;
+  label: string;
+  detail?: string;
+  severity?: Severity;
+  /** POSIX path relative to the run directory. */
+  screenshot?: string;
+}
+
+/**
+ * A window of timeline around a finding — the "failure clip". Screenshots are
+ * referenced, never copied, so evidence stays cheap; the window is
+ * configurable via `replay.beforeMs` / `replay.afterMs`.
+ */
+export interface ReplayClip {
+  runId: string;
+  runDir: string;
+  startMs: number;
+  focusMs: number;
+  endMs: number;
+  entries: TimelineEntry[];
+}
+
+// ---------------------------------------------------------------------------
+// Findings — AppBacktest's interpretation of the evidence
+//
+// Deliberately separate from Evaluation (pass/fail of the configured checks).
+// A finding carries category, severity, confidence, reproduction, evidence and
+// a replay clip, and groups repeat occurrences instead of duplicating.
+// ---------------------------------------------------------------------------
+
+export type FindingCategory =
+  | "critical_failure"
+  | "functional_bug"
+  | "visual_bug"
+  | "performance"
+  | "usability"
+  | "qol_recommendation";
+
+export type FindingSeverity = "critical" | "high" | "medium" | "low" | "info";
+
+/** A read-only pointer into the user's source. AppBacktest never writes here. */
+export interface CodeRef {
+  /** POSIX path relative to the source root. */
+  path: string;
+  line?: number;
+  snippet?: string;
+  /** Why this location is implicated by the runtime evidence. */
+  why: string;
+}
+
+export interface FindingOccurrence {
+  runId: string;
+  runDir: string;
+  scenarioKey: string;
+  personaKey: string;
+  atMs?: number;
+  clip?: ReplayClip;
+}
+
+export interface Finding {
+  /** Stable across runs — repeat sightings group onto one finding. */
+  id: string;
+  category: FindingCategory;
+  severity: FindingSeverity;
+  /** 0-1. Rises with reproduction count. */
+  confidence: number;
+  title: string;
+  /** What AppBacktest saw. Always grounded in captured evidence. */
+  observed: string;
+  expected?: string;
+  /** Usability / QoL only. */
+  userImpact?: string;
+  suggestion?: string;
+  /** The action trail that produced it. */
+  reproduction: string[];
+  /** Verbatim evidence lines (network, console, checks). */
+  evidence: string[];
+  occurrences: FindingOccurrence[];
+  /** e.g. "7 / 20 attempts". */
+  reproducedIn: string;
+  codeRefs: CodeRef[];
+  /** Invariant of the product: AppBacktest is diagnostic, never a fixer. */
+  sourceModified: false;
+}
+
+// ---------------------------------------------------------------------------
+// Feature configuration (recording / UX / source correlation)
+// ---------------------------------------------------------------------------
+
+/**
+ * Sensitive values are masked AT CAPTURE — preventing recording beats
+ * scrubbing afterwards.
+ */
+export interface RedactionConfig {
+  enabled: boolean;
+  /** Regex sources matched against an element's accessible name/role. */
+  fieldPatterns: string[];
+  /** Regex sources matched against captured text and URLs. */
+  valuePatterns: string[];
+  mask: string;
+}
+
+export type UxLevel = "off" | "conservative" | "balanced" | "detailed";
+
+export interface UxConfig {
+  /** Default "conservative": few, high-confidence, evidence-backed only. */
+  level: UxLevel;
+  minConfidence: number;
+  maxRecommendations: number;
+}
+
+export interface SourceConfig {
+  /** Read-only correlation. Disabled unless a root is configured. */
+  enabled: boolean;
+  root?: string;
+  maxFiles: number;
+}
+
+export interface ReplayConfig {
+  /** Clip window around a finding. */
+  beforeMs: number;
+  afterMs: number;
+}
+
+// ---------------------------------------------------------------------------
 // Provider — the agent brain boundary
 // ---------------------------------------------------------------------------
 
@@ -511,6 +684,8 @@ export interface DriverOptions {
   watch?: boolean;
   /** Shown in the watch HUD. */
   goal?: string;
+  /** Masks sensitive values as evidence is captured. */
+  redactor?: import("./redaction").Redactor;
   /** Absolute dir where the driver may write generated upload files. */
   workDir: string;
   /** Upload profile for filechooser interception. */
@@ -527,6 +702,11 @@ export interface ActOutcome {
   perturbations: PerturbationEvent[];
   /** Descriptor of the node actually dispatched to (act-time identity). */
   resolvedTarget?: ResilientLocator;
+  /**
+   * Set when the action's text was typed into a sensitive field: the engine
+   * records THIS instead of the real value.
+   */
+  redactedText?: string;
 }
 
 export interface ActOptions {
@@ -617,5 +797,10 @@ export interface BacktestReport {
     reverseDiscrepancies: number;
     passedWithObservations: number;
     byFailureKind: Partial<Record<FailureKind, number>>;
+    /** Actions the simulated users performed across the session. */
+    actions: number;
   };
+  /** Categorised interpretation of the evidence — problems first. */
+  findings: Finding[];
+  findingCounts: Record<FindingCategory, number>;
 }
