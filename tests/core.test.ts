@@ -124,7 +124,7 @@ scenarios:
     expect(cfg.app.name).toBe("Demo");
     expect(cfg.provider).toEqual({ type: "anthropic", model: "claude-opus-5", effort: "low" });
     expect(cfg.runs).toBe(1);
-    expect(cfg.browser).toEqual({ headless: true, actionTimeoutMs: 8000 });
+    expect(cfg.browser).toEqual({ headless: true, actionTimeoutMs: 8000, watch: false });
     expect(cfg.observers).toEqual({ ignoreConsole: [], ignoreRequests: [] });
     expect(cfg.outDir).toBe(".backtests");
     expect(cfg.personas["driver"]?.doubleClickChance).toBe(0.35);

@@ -56,15 +56,18 @@ program
   .option("--seed <seed>", "world seed (default: random, printed)")
   .option("--scenario <name>", "run a single scenario")
   .option("--headed", "show the browser window", false)
-  .action(async (opts: { config: string; seed?: string; scenario?: string; headed: boolean }) => {
+  .option("--watch", "watch the simulated user: visible browser, slowed down, cursor + HUD", false)
+  .action(async (opts: { config: string; seed?: string; scenario?: string; headed: boolean; watch: boolean }) => {
     try {
       const seed = opts.seed ?? String(Math.floor(Math.random() * 900000) + 100000);
       console.log(`${pc.bold("AppBacktest")} ${pc.dim(`v${appbacktestVersion}`)} · seed ${pc.bold(seed)}`);
+      if (opts.watch) console.log(pc.dim("watch mode: slowed down so you can follow along\n"));
       const report = await runBacktest({
         configPath: opts.config,
         seed,
         scenario: opts.scenario,
         headed: opts.headed,
+        watch: opts.watch,
       });
       process.exit(Math.min(report.totals.failed + report.totals.setupFailed, 100));
     } catch (err) {

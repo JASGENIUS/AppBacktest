@@ -27,6 +27,8 @@ export interface RunBacktestArgs {
   seed?: string;
   scenario?: string;
   headed?: boolean;
+  /** Visible browser, slowed down, with a drawn cursor + HUD. Implies headed. */
+  watch?: boolean;
   /** Print per-step progress to the terminal (default true). */
   print?: boolean;
   events?: EngineEvents;
@@ -50,7 +52,8 @@ export function loadContext(configPath: string): BacktestContext {
 export async function runBacktest(args: RunBacktestArgs): Promise<BacktestReport> {
   const ctx = loadContext(args.configPath);
   const { config, configDir, outDirAbs } = ctx;
-  if (args.headed) config.browser.headless = false;
+  if (args.headed || args.watch) config.browser.headless = false;
+  if (args.watch) config.browser.watch = true;
 
   const seed = args.seed ?? String(Math.floor(Math.random() * 900000) + 100000);
   const world = generateWorld(config, seed);

@@ -33,10 +33,15 @@ import {
   IDENTITY_SOURCE,
   TRANSIENT_OBSERVER_SOURCE,
   WALKER_SOURCE,
+  WATCH_OVERLAY_SOURCE,
+  WATCH_UPDATE_SOURCE,
 } from "./perception";
 import { generateUploadPng } from "./uploads";
 
 const WAIT_CAP_MS = 2000;
+/** Watch mode pacing: slow every Playwright op, and let the cursor glide land. */
+const WATCH_SLOW_MO_MS = 220;
+const WATCH_CURSOR_SETTLE_MS = 520;
 
 const norm = (s: string) => (s || "").replace(/\s+/g, " ").trim().toLowerCase();
 
@@ -86,6 +91,8 @@ class PlaywrightDriver implements BrowserDriver {
   private tabSwitched = false;
   /** context.on("page") fires for our own first page too — never wire twice. */
   private wired = new WeakSet<Page>();
+  /** Actions dispatched so far — shown in the watch HUD. */
+  private actCount = 0;
 
   constructor(private opts: DriverOptions) {}
 
@@ -97,7 +104,10 @@ class PlaywrightDriver implements BrowserDriver {
       generateUploadPng(this.opts.uploadSeed, this.opts.uploadSizeKB),
     );
 
-    this.browser = await chromium.launch({ headless: this.opts.headless });
+    this.browser = await chromium.launch({
+      headless: this.opts.headless,
+      ...(this.opts.watch ? { slowMo: WATCH_SLOW_MO_MS } : {}),
+    });
     this.context = await this.browser.newContext(
       this.opts.device === "mobile"
         ? {
@@ -117,6 +127,12 @@ class PlaywrightDriver implements BrowserDriver {
       }
     });
     await this.context.addInitScript(TRANSIENT_OBSERVER_SOURCE);
+    if (this.opts.watch) {
+      await this.context.addInitScript(
+        `window.__abt_hud_goal = ${JSON.stringify(this.opts.goal ?? "")};`,
+      );
+      await this.context.addInitScript(WATCH_OVERLAY_SOURCE);
+    }
 
     this.page = await this.context.newPage();
     this.wirePage(this.page);
@@ -256,6 +272,7 @@ class PlaywrightDriver implements BrowserDriver {
   async act(action: AgentAction, opts: ActOptions): Promise<ActOutcome> {
     const page = this.mustPage();
     const urlBefore = page.url();
+    this.actCount += 1;
     const perturbations: PerturbationEvent[] = [];
     const fail = (errorKind: StepErrorKind, error: string): ActOutcome => ({
       ok: false,
@@ -306,6 +323,7 @@ class PlaywrightDriver implements BrowserDriver {
         const sel = `[data-abt-ref="${ref}"]`;
         const loc = frame.locator(sel).first();
         const timeout = this.opts.actionTimeoutMs;
+        await this.showIntent(frame, sel, this.describeForHud(action, identity.name), action.kind === "click");
 
         if (action.kind === "click") {
           const doubled = opts.forcedPerturbations
@@ -347,22 +365,26 @@ class PlaywrightDriver implements BrowserDriver {
           }
         }
       } else if (action.kind === "navigate") {
+        await this.showIntent(undefined, undefined, this.describeForHud(action), false);
         const target = new URL(action.url, this.opts.appUrl);
         const app = new URL(this.opts.appUrl);
         if (target.origin !== app.origin) {
           return fail("invalid_action", `navigation blocked: ${target.origin} is outside the app origin ${app.origin}`);
         }
         await page.goto(target.toString(), { waitUntil: "domcontentloaded", timeout: this.opts.actionTimeoutMs });
-      } else if (action.kind === "back") {
-        await page.goBack({ waitUntil: "domcontentloaded", timeout: this.opts.actionTimeoutMs }).catch(() => {});
-      } else if (action.kind === "press") {
-        await page.keyboard.press(action.key);
-      } else if (action.kind === "scroll") {
-        await page.mouse.wheel(0, action.direction === "down" ? 600 : -600);
-      } else if (action.kind === "wait") {
-        await page.waitForTimeout(Math.min(action.ms, WAIT_CAP_MS));
+      } else {
+        await this.showIntent(undefined, undefined, this.describeForHud(action), false);
+        if (action.kind === "back") {
+          await page.goBack({ waitUntil: "domcontentloaded", timeout: this.opts.actionTimeoutMs }).catch(() => {});
+        } else if (action.kind === "press") {
+          await page.keyboard.press(action.key);
+        } else if (action.kind === "scroll") {
+          await page.mouse.wheel(0, action.direction === "down" ? 600 : -600);
+        } else if (action.kind === "wait") {
+          await page.waitForTimeout(Math.min(action.ms, WAIT_CAP_MS));
+        }
+        // done / give_up: narrated above, no browser work.
       }
-      // done / give_up: no browser work.
 
       await page.waitForLoadState("load", { timeout: 1500 }).catch(() => {});
       if (action.kind === "click" && this.mustPage().url() === urlBefore) {
@@ -375,6 +397,10 @@ class PlaywrightDriver implements BrowserDriver {
           .catch(() => {});
       }
       await this.harvestTransients();
+      // The next decision is an LLM round-trip — say so, or the HUD looks stuck.
+      if (action.kind !== "done" && action.kind !== "give_up") {
+        await this.showIntent(undefined, undefined, "thinking about the next step…", false);
+      }
       return {
         ok: true,
         urlAfter: this.mustPage().url(),
@@ -390,6 +416,57 @@ class PlaywrightDriver implements BrowserDriver {
           : "not_found";
       await this.harvestTransients();
       return fail(kind, message.slice(0, 300));
+    }
+  }
+
+  /**
+   * Watch mode only: glide the drawn cursor onto the target and narrate the
+   * action in the HUD. Never throws — presentation must not fail a run.
+   */
+  private async showIntent(
+    frame: Frame | undefined,
+    selector: string | undefined,
+    label: string,
+    pulse: boolean,
+  ): Promise<void> {
+    if (!this.opts.watch) return;
+    try {
+      const target = frame ?? this.mustPage().mainFrame();
+      const step = `step ${this.actCount}`;
+      await target.evaluate(
+        `${WATCH_UPDATE_SOURCE}(${JSON.stringify(selector ?? null)}, ${JSON.stringify(label)}, ${pulse}, ${JSON.stringify(step)})`,
+      );
+      if (selector) await this.mustPage().waitForTimeout(WATCH_CURSOR_SETTLE_MS);
+    } catch {
+      // overlay missing mid-navigation — irrelevant to the run
+    }
+  }
+
+  private describeForHud(action: AgentAction, targetName?: string): string {
+    const on = targetName ? ` “${targetName}”` : "";
+    switch (action.kind) {
+      case "click":
+        return `clicking${on}`;
+      case "type":
+        return `typing “${action.text.slice(0, 40)}”${targetName ? ` into${on}` : ""}`;
+      case "select":
+        return `choosing “${action.value}”${on}`;
+      case "upload":
+        return `attaching a file via${on}`;
+      case "navigate":
+        return `going to ${action.url}`;
+      case "press":
+        return `pressing ${action.key}`;
+      case "scroll":
+        return `scrolling ${action.direction}`;
+      case "back":
+        return "going back";
+      case "wait":
+        return "waiting for the page";
+      case "done":
+        return `done — ${action.outcome}: ${action.summary.slice(0, 70)}`;
+      case "give_up":
+        return `giving up — ${action.reason.slice(0, 70)}`;
     }
   }
 

@@ -101,6 +101,8 @@ const browserSchema = z
   .object({
     headless: z.boolean().default(true),
     actionTimeoutMs: z.number().int().positive().default(8000),
+    // Usually set by the CLI's --watch flag rather than written in config.
+    watch: z.boolean().default(false),
   })
   .strict();
 
@@ -118,7 +120,7 @@ const configSchema = z
     personas: z.record(z.string(), personaSchema).default({}),
     scenarios: z.record(z.string(), scenarioSchema),
     runs: z.number().int().min(1).max(50).default(1),
-    browser: browserSchema.default({ headless: true, actionTimeoutMs: 8000 }),
+    browser: browserSchema.default({ headless: true, actionTimeoutMs: 8000, watch: false }),
     observers: observerSchema.default({ ignoreConsole: [], ignoreRequests: [] }),
     outDir: z.string().min(1).default(".backtests"),
   })

@@ -147,6 +147,7 @@ export async function executeRun(plan: RunPlan, deps: RunDeps): Promise<RunRecor
     headless: config.browser.headless,
     device: plan.persona.device,
     actionTimeoutMs: config.browser.actionTimeoutMs,
+    ...(config.browser.watch ? { watch: true, goal: plan.goal } : {}),
     workDir: runDirAbs,
     uploadSizeKB: plan.persona.uploadSizeKB,
     uploadSeed: `${plan.subSeed}:upload`,

@@ -91,6 +91,25 @@ FIXED=1 npm run demo:regression    # ✓ FIXED → exit code 0
 
 That's the loop: **run → discover → replay → promote → fix → regression.**
 
+### Watch it work
+
+```bash
+npx appbacktest run --watch
+```
+
+Opens a real Chrome window, slows the run to human speed, and draws a cursor
+that glides to whatever the simulated user is about to click — with a bar
+along the bottom showing the goal, the step number, and the current action
+(including "thinking about the next step…" while the model decides).
+
+![Watch mode](docs/watch-mode.png)
+
+This is the fastest way to understand a failure: reading a trace tells you
+*what* happened, watching tells you *why*. The overlay is excluded from the
+agent's perception and cannot receive pointer events, so watching a run never
+changes what the run does. Use plain `--headed` for a real-speed browser
+window without the overlay.
+
 ### With a real model
 
 ```bash
@@ -202,7 +221,7 @@ final DOM.
 | Command | What it does | Exit code |
 |---|---|---|
 | `appbacktest init` | scaffold config + artifact tree | |
-| `appbacktest run [--seed N] [--scenario name] [--headed]` | run the backtest, streaming every step | failed runs |
+| `appbacktest run [--seed N] [--scenario name] [--headed] [--watch]` | run the backtest, streaming every step (`--watch` = visible browser, slowed, cursor + HUD) | failed runs |
 | `appbacktest replay <runId>` | strict replay — recorded trace, recorded perturbations, **no LLM ever** | 0 fixed · 1 reproduced · 2 diverged · 3 inconclusive |
 | `appbacktest promote <runId>` | copy run + evidence into `.backtests/regressions/` (commit that dir) | |
 | `appbacktest regression` | strict-replay every fixture; REPRODUCED **and** DIVERGED fail the gate | gate failures |

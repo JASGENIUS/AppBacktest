@@ -161,6 +161,8 @@ export interface BrowserConfig {
   headless: boolean;
   /** Per-action timeout in ms. */
   actionTimeoutMs: number;
+  /** Watch mode (CLI `--watch`): visible browser, slowed down, cursor + HUD. */
+  watch?: boolean;
 }
 
 export interface ObserverConfig {
@@ -501,6 +503,14 @@ export interface DriverOptions {
   headless: boolean;
   device: DeviceKind;
   actionTimeoutMs: number;
+  /**
+   * Watch mode: slow the run down and draw a cursor + HUD so a human can see
+   * what the simulated user is doing. Presentation only — the overlay is
+   * excluded from perception and cannot intercept pointer events.
+   */
+  watch?: boolean;
+  /** Shown in the watch HUD. */
+  goal?: string;
   /** Absolute dir where the driver may write generated upload files. */
   workDir: string;
   /** Upload profile for filechooser interception. */
