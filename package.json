@@ -2,7 +2,7 @@
   "name": "appbacktest",
   "version": "0.1.0",
   "description": "Backtesting for applications: AI-simulated users pursue goals through your real UI, deterministic code verifies what actually happened, and every discovered failure becomes a replayable regression.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "Jasroop Sangha",
   "bin": {
     "appbacktest": "dist/cli/index.js"

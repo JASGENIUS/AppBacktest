@@ -23,6 +23,8 @@ import type {
   DriverOptions,
   EngineEvents,
   HistoryEntry,
+  ResolvedActor,
+  RngLike,
   RunEnding,
   RunPlan,
   RunRecord,
@@ -31,6 +33,11 @@ import type {
 
 export interface RunDeps {
   provider: AgentProvider;
+  /**
+   * Concurrent runs need one provider per actor (fixture providers carry
+   * per-actor state). Falls back to `provider` when absent.
+   */
+  makeProvider?: () => AgentProvider;
   makeDriver: (opts: DriverOptions) => BrowserDriver;
   config: AppBacktestConfig;
   outDirAbs: string;
@@ -90,6 +97,255 @@ function feedbackOf(step: StepRecord): string[] {
   return out.slice(0, 4);
 }
 
+/**
+ * A single simulated person inside a concurrent run: their own browser
+ * context (own session/cookies), own provider, own history and step budget.
+ */
+interface ActorState {
+  name: string;
+  actor: ResolvedActor;
+  driver: BrowserDriver;
+  provider: AgentProvider;
+  history: HistoryEntry[];
+  rng: RngLike;
+  stepsTaken: number;
+  finished: boolean;
+  belief: AgentBelief | null;
+  ending: RunEnding;
+}
+
+/**
+ * Multi-user run: several people work the application at the same time.
+ *
+ * Turns are interleaved on a SEEDED schedule rather than by racing real
+ * threads. That is deliberate — an interleaving that is reproducible is what
+ * turns "sometimes two people clobber each other" into a fixture you can
+ * replay. (True wall-clock parallelism would find a different, narrower class
+ * of race and is not reproducible; it stays on the roadmap.)
+ */
+async function executeConcurrentRun(
+  plan: RunPlan,
+  deps: RunDeps,
+  runDirAbs: string,
+  finish: (partial: Pick<RunRecord, "steps" | "observations" | "evaluation">) => RunRecord,
+): Promise<RunRecord> {
+  const { config } = deps;
+  const actorPlans = plan.actors ?? [];
+  const scheduleRng = new Rng(plan.subSeed).fork("schedule");
+
+  const states: ActorState[] = actorPlans.map((actor, i) => ({
+    name: actor.name,
+    actor,
+    driver: deps.makeDriver({
+      appUrl: config.app.url,
+      headless: config.browser.headless,
+      device: actor.persona.device,
+      actionTimeoutMs: config.browser.actionTimeoutMs,
+      workDir: join(runDirAbs, `actor-${actor.name}`),
+      uploadSizeKB: actor.persona.uploadSizeKB,
+      uploadSeed: `${plan.subSeed}:${actor.name}:upload`,
+      redactor: new Redactor(config.redaction),
+      ...(config.browser.watch ? { watch: true, goal: `${actor.name}: ${actor.goal}` } : {}),
+    }),
+    provider: deps.makeProvider ? deps.makeProvider() : deps.provider,
+    history: [],
+    rng: new Rng(plan.subSeed).fork(`perturb:${actor.name}`),
+    stepsTaken: 0,
+    finished: false,
+    belief: null,
+    ending: "max_steps",
+  }));
+
+  const steps: StepRecord[] = [];
+  let stepIndex = 0;
+  let fatalError: string | undefined;
+
+  try {
+    for (const s of states) await s.driver.start();
+
+    let prevEnd = Date.now();
+    const totalBudget = states.reduce((n, s) => n + s.actor.persona.maxSteps, 0);
+
+    while (steps.length < totalBudget) {
+      const available = states.filter((s) => !s.finished && s.stepsTaken < s.actor.persona.maxSteps);
+      if (available.length === 0) break;
+      // Seeded choice of who moves next — this IS the interleaving.
+      const state = scheduleRng.pick(available);
+
+      const tsStart = new Date().toISOString();
+      const elapsedMs = steps.length === 0 ? 0 : Date.now() - prevEnd;
+
+      const perception = await state.driver.perceive();
+      const digest = perceptionDigestOf(perception.url, perception.elements);
+      const shotRel = `steps/${String(stepIndex).padStart(3, "0")}.png`;
+      await state.driver.screenshot(join(runDirAbs, shotRel)).catch(() => {});
+
+      let action: AgentAction;
+      try {
+        action = await state.provider.decide({
+          goal: state.actor.goal,
+          actorName: state.name,
+          persona: state.actor.persona,
+          appUrl: config.app.url,
+          stepIndex: state.stepsTaken,
+          maxSteps: state.actor.persona.maxSteps,
+          history: state.history,
+          perception,
+        });
+      } catch (err) {
+        fatalError = `provider error (${state.name}): ${err instanceof Error ? err.message : String(err)}`;
+        break;
+      }
+
+      const preTarget =
+        "ref" in action && typeof action.ref === "string" ? state.driver.describeRef(action.ref) : undefined;
+      const outcome = await state.driver.act(action, {
+        persona: state.actor.persona,
+        rng: state.rng.fork(`step:${state.stepsTaken}`),
+      });
+      const incidents = state.driver.drainIncidents();
+      prevEnd = Date.now();
+
+      const recordedAction: AgentAction =
+        outcome.redactedText !== undefined && action.kind === "type"
+          ? { ...action, text: outcome.redactedText }
+          : action;
+
+      steps.push({
+        index: stepIndex,
+        actor: state.name,
+        elapsedMs,
+        preUrl: perception.url,
+        perceptionDigest: digest,
+        perception: {
+          title: perception.title,
+          elementCount: perception.elements.length,
+          ...(perception.modalOpen ? { modalOpen: perception.modalOpen } : {}),
+        },
+        action: recordedAction,
+        ...(outcome.resolvedTarget ?? preTarget ? { target: outcome.resolvedTarget ?? preTarget } : {}),
+        perturbations: outcome.perturbations,
+        incidents,
+        result: {
+          ok: outcome.ok,
+          ...(outcome.error ? { error: outcome.error } : {}),
+          ...(outcome.errorKind ? { errorKind: outcome.errorKind } : {}),
+          urlAfter: outcome.urlAfter,
+        },
+        screenshot: shotRel,
+        tsStart,
+        tsEnd: new Date().toISOString(),
+      });
+      deps.events?.onStep?.(steps[steps.length - 1]!);
+
+      state.history.push({
+        index: state.stepsTaken,
+        action: recordedAction,
+        ok: outcome.ok,
+        ...(outcome.error ? { error: outcome.error } : {}),
+        urlAfter: outcome.urlAfter,
+        feedback: feedbackOf(steps[steps.length - 1]!),
+      });
+      state.stepsTaken += 1;
+      stepIndex += 1;
+
+      if (action.kind === "done") {
+        state.finished = true;
+        state.ending = "done";
+        state.belief = { outcome: action.outcome, summary: action.summary };
+      } else if (action.kind === "give_up") {
+        state.finished = true;
+        state.ending = "gave_up";
+        state.belief = { outcome: "failure", summary: action.reason };
+      }
+    }
+
+    // The run's ending is the least happy of its participants.
+    const ending: RunEnding = fatalError
+      ? "fatal"
+      : states.some((s) => s.ending === "gave_up")
+        ? "gave_up"
+        : states.every((s) => s.ending === "done")
+          ? "done"
+          : "max_steps";
+
+    if (fatalError) {
+      const observations = deriveObservations(steps, "fatal", config.observers);
+      observations.unshift({ kind: "action_error", severity: "error", message: fatalError });
+      return finish({
+        steps,
+        observations,
+        evaluation: evaluate({
+          checkResults: [],
+          ending: "fatal",
+          belief: null,
+          observations,
+          setupFailed: false,
+          fatalError,
+        }),
+      });
+    }
+
+    // Checks run once, through the first actor's session, after everyone stops.
+    const primary = states[0]!;
+    await collectLateIncidents(primary.driver, steps);
+    const transients = steps.flatMap((s) => s.incidents.transientMessages);
+    let checkResults;
+    try {
+      checkResults = await runChecks(plan.checks, primary.driver, config.app.url, { transients });
+    } catch (err) {
+      checkResults = plan.checks.map((check) => ({
+        check,
+        passed: false,
+        errored: true,
+        detail: `evaluator failed: ${err instanceof Error ? err.message : String(err)}`,
+      }));
+    }
+
+    // Belief for a multi-user run: success only if everyone believed it worked.
+    const beliefs = states.map((s) => s.belief).filter((b): b is AgentBelief => b !== null);
+    const belief: AgentBelief | null =
+      beliefs.length === 0
+        ? null
+        : {
+            outcome: beliefs.every((b) => b.outcome === "success")
+              ? "success"
+              : beliefs.some((b) => b.outcome === "failure")
+                ? "failure"
+                : "unsure",
+            summary: states
+              .filter((s) => s.belief)
+              .map((s) => `${s.name}: ${s.belief!.summary}`)
+              .join(" | "),
+          };
+
+    const observations = deriveObservations(steps, ending, config.observers);
+    return finish({
+      steps,
+      observations,
+      evaluation: evaluate({ checkResults, ending, belief, observations, setupFailed: false }),
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    const observations = deriveObservations(steps, "fatal", config.observers);
+    observations.unshift({ kind: "action_error", severity: "error", message });
+    return finish({
+      steps,
+      observations,
+      evaluation: evaluate({
+        checkResults: [],
+        ending: "fatal",
+        belief: null,
+        observations,
+        setupFailed: false,
+        fatalError: message,
+      }),
+    });
+  } finally {
+    for (const s of states) await s.driver.close().catch(() => {});
+  }
+}
+
 export async function executeRun(plan: RunPlan, deps: RunDeps): Promise<RunRecord> {
   const { config, provider } = deps;
   const startedAt = new Date().toISOString();
@@ -141,6 +397,11 @@ export async function executeRun(plan: RunPlan, deps: RunDeps): Promise<RunRecor
         fatalError: resetError,
       }),
     });
+  }
+
+  // Multi-user scenarios take a different loop entirely.
+  if (plan.actors && plan.actors.length > 0) {
+    return executeConcurrentRun(plan, deps, runDirAbs, finish);
   }
 
   const driver = deps.makeDriver({

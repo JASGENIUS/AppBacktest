@@ -51,6 +51,9 @@ function pristineState() {
       // Half belong to another team — the permission-leak surface.
       team: i % 2 === 0 ? "alpha" : "beta",
       escalations: [],
+      assignee: "",
+      tags: [],
+      version: 1,
       notes: `Reported by ${CUSTOMERS[i % CUSTOMERS.length]} support.`,
     });
   }
@@ -148,12 +151,51 @@ function createApp({ fixed = FIXED } = {}) {
     }, ESCALATE_LATENCY_MS);
   });
 
+  /**
+   * Update a ticket's triage fields. BUG E (lost update): the handler reads
+   * the whole ticket, mutates a copy, and writes it back with no version
+   * check — so when two people triage the same ticket at once, whoever saves
+   * second silently erases the other's work. Neither is told anything.
+   */
+  app.post("/api/tickets/:id/triage", requireAuth, (req, res) => {
+    const index = state.tickets.findIndex((t) => t.id === Number(req.params.id));
+    if (index === -1) return res.status(404).json({ error: "not found" });
+    const { assignee, tags, version } = req.body || {};
+
+    if (fixed) {
+      // Optimistic concurrency: reject a save based on a stale read.
+      const current = state.tickets[index];
+      if (version !== undefined && version !== current.version) {
+        return res.status(409).json({ error: "ticket changed since you opened it" });
+      }
+      const next = { ...current, version: current.version + 1 };
+      if (assignee !== undefined) next.assignee = assignee;
+      if (tags !== undefined) next.tags = [...new Set([...(current.tags ?? []), ...tags])];
+      state.tickets[index] = next;
+      return res.json({ ok: true, ticket: next });
+    }
+
+    // Read-modify-write with no version check — last writer wins outright.
+    const snapshot = { ...state.tickets[index] };
+    setTimeout(() => {
+      const written = { ...snapshot, version: (snapshot.version ?? 0) + 1 };
+      if (assignee !== undefined) written.assignee = assignee;
+      if (tags !== undefined) written.tags = tags; // clobbers whatever landed meanwhile
+      state.tickets[index] = written;
+      res.json({ ok: true, ticket: written });
+    }, 120);
+  });
+
   app.post("/api/reset", (_req, res) => {
     state = pristineState();
     res.json({ ok: true });
   });
   app.get("/api/state", (_req, res) =>
-    res.json({ tickets: state.tickets.map(({ id, status, escalations, team, priority }) => ({ id, status, escalations: escalations.length, team, priority })) }),
+    res.json({
+      tickets: state.tickets.map(({ id, status, escalations, team, priority, assignee, tags, version }) => ({
+        id, status, escalations: escalations.length, team, priority, assignee, tags, version,
+      })),
+    }),
   );
 
   // --- pages ---

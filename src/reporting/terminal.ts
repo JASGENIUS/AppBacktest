@@ -49,7 +49,8 @@ export function printRunStart(plan: RunPlan): void {
 
 export function printStepLine(step: StepRecord): void {
   const target = step.target ? ` ${pc.dim(`'${step.target.name}'`)}` : "";
-  const head = `  #${step.index} ${describeAction(step.action)}${target}`;
+  const who = step.actor ? `${pc.cyan(`[${step.actor}]`)} ` : "";
+  const head = `  #${step.index} ${who}${describeAction(step.action)}${target}`;
   if (step.result.ok) {
     console.log(`${pc.dim(head)} ${pc.dim(`→ ok (${shortUrl(step.result.urlAfter)})`)}`);
   } else {

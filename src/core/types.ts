@@ -102,10 +102,25 @@ export type TextCheck = Extract<CheckConfig, { type: "text" | "no_text" }> & {
   at?: string;
 };
 
-export interface ScenarioConfig {
-  /** Persona key (from `personas`) or an inline persona object. */
+/** One participant in a concurrent scenario. */
+export interface ConcurrentActorConfig {
+  /** Stable name used in the trace and report ("dispatcher", "driver"). */
+  name: string;
   persona: string | PersonaConfig;
   goal: string;
+}
+
+export interface ScenarioConfig {
+  /** Persona key (from `personas`) or an inline persona object. Single-actor scenarios. */
+  persona?: string | PersonaConfig;
+  goal?: string;
+  /**
+   * Multi-user scenario: several simulated people work the app at the same
+   * time, each in their own browser context (own session and cookies). Turns
+   * are interleaved on a seeded schedule, so the interleaving is reproducible
+   * — which is what makes lost updates and stale-view bugs replayable.
+   */
+  concurrent?: ConcurrentActorConfig[];
   checks: CheckConfig[];
 }
 
@@ -202,6 +217,14 @@ export interface ResolvedPersona {
   traits: string[];
 }
 
+/** A resolved participant of a concurrent run. */
+export interface ResolvedActor {
+  name: string;
+  personaKey: string;
+  goal: string;
+  persona: ResolvedPersona;
+}
+
 export interface RunPlan {
   runId: string;
   /** `${seed}:${scenarioKey}:${runIndex}` — stable identity, not position. */
@@ -211,6 +234,8 @@ export interface RunPlan {
   goal: string;
   persona: ResolvedPersona;
   checks: CheckConfig[];
+  /** Present for multi-user scenarios; the fields above describe actor 0. */
+  actors?: ResolvedActor[];
 }
 
 export interface WorldPlan {
@@ -358,6 +383,8 @@ export interface StepResult {
 
 export interface StepRecord {
   index: number;
+  /** Which simulated person took this step (multi-user runs only). */
+  actor?: string;
   /** ms since the previous step's action finished (replay readiness gate input). */
   elapsedMs: number;
   preUrl: string;
@@ -654,6 +681,8 @@ export interface HistoryEntry {
 
 export interface DecideContext {
   goal: string;
+  /** Which simulated person is deciding (multi-user runs only). */
+  actorName?: string;
   persona: ResolvedPersona;
   appUrl: string;
   stepIndex: number;

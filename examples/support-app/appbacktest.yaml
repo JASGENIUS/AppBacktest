@@ -13,7 +13,7 @@ app:
 
 provider:
   type: fixture
-  path: ./fixtures/agent.json
+  path: ./fixtures/agent.json  # single-actor default
 
 personas:
   support_lead:
@@ -50,3 +50,4 @@ ux:
   level: conservative
   minConfidence: 0.7
   maxRecommendations: 3
+

@@ -89,13 +89,43 @@ const checkSchema = z.discriminatedUnion("type", [
     }),
 ]);
 
-const scenarioSchema = z
+const concurrentActorSchema = z
   .object({
+    name: z.string().min(1),
     persona: z.union([z.string().min(1), personaSchema]),
-    goal: z.string().min(8, "goal must be at least 8 characters"),
-    checks: z.array(checkSchema),
+    goal: z.string().min(8),
   })
   .strict();
+
+const scenarioSchema = z
+  .object({
+    concurrent: z.array(concurrentActorSchema).min(2).max(6).optional(),
+    persona: z.union([z.string().min(1), personaSchema]).optional(),
+    goal: z.string().min(8, "goal must be at least 8 characters").optional(),
+    checks: z.array(checkSchema),
+  })
+  .strict()
+  .superRefine((s, ctx) => {
+    // Exactly one shape: a single simulated user, or several concurrent ones.
+    if (s.concurrent) {
+      if (s.persona !== undefined || s.goal !== undefined) {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            "a concurrent scenario defines persona and goal per actor — remove the scenario-level persona/goal",
+        });
+      }
+      const names = s.concurrent.map((a) => a.name);
+      if (new Set(names).size !== names.length) {
+        ctx.addIssue({ code: "custom", message: "concurrent actor names must be unique" });
+      }
+    } else if (s.persona === undefined || s.goal === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        message: "a scenario needs either persona + goal, or a concurrent list of actors",
+      });
+    }
+  });
 
 /**
  * Defaults chosen to stop the obvious secrets reaching disk without the user

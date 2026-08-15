@@ -412,6 +412,60 @@ check("hard cap limits recommendation volume", () => {
 });
 
 // ---------------------------------------------------------------------------
+group("Multi-user (concurrent) scenarios");
+
+const SUPPORT = "examples/support-app/appbacktest.concurrent.yaml";
+const SUPPORT_OUT = join(ROOT, "examples/support-app/.backtests");
+
+check("two simulated users interleave on a seeded schedule", () => {
+  rmSync(join(SUPPORT_OUT, "runs"), { recursive: true, force: true });
+  const r = cli(["run", "--config", SUPPORT, "--seed", "606060"]);
+  assert(r.code > 0, `expected the lost update to fail the run, exit ${r.code}`);
+  const rep = freshReport(SUPPORT_OUT);
+  const runDir = join(SUPPORT_OUT, "runs", rep.runs[0].runId);
+  const rec = readJson(join(runDir, "record.json"));
+  const actors = [...new Set(rec.steps.map((s) => s.actor).filter(Boolean))];
+  assert(actors.length === 2, `expected 2 actors in the trace, got ${actors.join(",") || "none"}`);
+  // Interleaved, not sequential: both actors act before either finishes.
+  const seq = rec.steps.map((s) => s.actor);
+  const firstA = seq.indexOf(actors[0]);
+  const lastA = seq.lastIndexOf(actors[0]);
+  const firstB = seq.indexOf(actors[1]);
+  assert(firstB > firstA && firstB < lastA, "actors ran sequentially, not interleaved");
+  return `${actors.join(" + ")} · ${rec.steps.length} interleaved steps`;
+});
+
+check("each user gets an isolated session (own browser context)", () => {
+  const rep = freshReport(SUPPORT_OUT);
+  const rec = readJson(join(SUPPORT_OUT, "runs", rep.runs[0].runId, "record.json"));
+  // Both signed in independently; if they shared a context the second login
+  // would have replaced the first and only one identity would appear.
+  const typed = rec.steps.filter((s) => s.action.kind === "type").map((s) => s.action.text);
+  assert(typed.includes("ana@meridian.test"), "ana never signed in");
+  assert(typed.includes("ben@meridian.test"), "ben never signed in");
+  assert(!typed.includes("support123"), "a password reached the trace unmasked");
+  return "separate logins · passwords masked";
+});
+
+check("the lost update is caught as a critical discrepancy", () => {
+  const rep = freshReport(SUPPORT_OUT);
+  assert(rep.totals.discrepancies >= 1, "no discrepancy raised for the lost update");
+  const critical = rep.findings.filter((f) => f.category === "critical_failure");
+  assert(critical.length > 0, "lost update was not reported as a critical failure");
+  const trail = critical[0].reproduction.join(" ");
+  assert(/\[(ana|ben)\]/.test(trail), "reproduction does not attribute steps to actors");
+  return `${critical.length} critical · reproduction names each actor`;
+});
+
+check("fixing the concurrency bug turns the run green", () => {
+  const r = cli(["run", "--config", SUPPORT, "--seed", "606060"], { FIXED: "1" });
+  assert(r.code === 0, `expected a clean pass with FIXED=1, exit ${r.code}\n${r.out.slice(-400)}`);
+  const rep = freshReport(SUPPORT_OUT);
+  assert(rep.totals.passed === 1 && rep.totals.discrepancies === 0, "control run was not clean");
+  return "optimistic locking + retry → PASS";
+});
+
+// ---------------------------------------------------------------------------
 group("Read-only source correlation");
 
 check("source correlation attaches code locations without touching code", () => {

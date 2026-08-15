@@ -42,7 +42,7 @@ export class FixtureProvider implements AgentProvider {
   constructor(private readonly fixturePath: string) {}
 
   async decide(ctx: DecideContext): Promise<AgentAction> {
-    const decisions = this.load();
+    const decisions = this.load(ctx.actorName);
     if (this.cursor >= decisions.length) {
       return { kind: "give_up", reason: `fixture exhausted after ${decisions.length} decisions` };
     }
@@ -51,8 +51,14 @@ export class FixtureProvider implements AgentProvider {
     return this.resolveDecision(decisions[index], index, ctx);
   }
 
-  /** Lazy read on first decide; relative paths resolve against process.cwd(). */
-  private load(): unknown[] {
+  /**
+   * Lazy read on first decide; relative paths resolve against process.cwd().
+   *
+   * Two shapes are accepted:
+   *   {"decisions": [...]}                      — one simulated user
+   *   {"actors": {"name": {"decisions": [...]}}} — one list per concurrent actor
+   */
+  private load(actorName?: string): unknown[] {
     if (this.decisions !== null) return this.decisions;
     const abs = path.isAbsolute(this.fixturePath)
       ? this.fixturePath
@@ -71,12 +77,26 @@ export class FixtureProvider implements AgentProvider {
     } catch (err) {
       throw new Error(`Fixture file ${abs} is not valid JSON: ${(err as Error).message}`);
     }
-    if (
-      typeof parsed !== "object" ||
-      parsed === null ||
-      !Array.isArray((parsed as { decisions?: unknown }).decisions)
-    ) {
-      throw new Error(`Fixture file ${abs} must be an object of shape {"decisions": [...]}`);
+    if (typeof parsed !== "object" || parsed === null) {
+      throw new Error(`Fixture file ${abs} must be an object`);
+    }
+
+    const actors = (parsed as { actors?: Record<string, { decisions?: unknown }> }).actors;
+    if (actors && actorName) {
+      const forActor = actors[actorName];
+      if (!forActor || !Array.isArray(forActor.decisions)) {
+        throw new Error(
+          `Fixture file ${abs} has no decisions for actor "${actorName}" — defined actors: ${Object.keys(actors).join(", ") || "(none)"}`,
+        );
+      }
+      this.decisions = forActor.decisions;
+      return this.decisions;
+    }
+
+    if (!Array.isArray((parsed as { decisions?: unknown }).decisions)) {
+      throw new Error(
+        `Fixture file ${abs} must be {"decisions": [...]} or {"actors": {"<name>": {"decisions": [...]}}}`,
+      );
     }
     this.decisions = (parsed as { decisions: unknown[] }).decisions;
     return this.decisions;

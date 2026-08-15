@@ -1,0 +1,35 @@
+{
+  "description": "Per-actor decision lists for the multi-user triage scenario. Both agents do the same thing to the same ticket with different values; the engine interleaves their turns on a seeded schedule.",
+  "actors": {
+    "ana": {
+      "decisions": [
+        { "kind": "type", "ref": { "role": "textbox", "nameContains": "Work email" }, "text": "ana@meridian.test" },
+        { "kind": "type", "ref": { "role": "password", "nameContains": "Password" }, "text": "support123" },
+        { "kind": "click", "ref": { "role": "button", "nameContains": "Sign in" } },
+        { "kind": "wait", "ms": 700 },
+        { "kind": "navigate", "url": "/tickets/1027" },
+        { "kind": "wait", "ms": 700 },
+        { "kind": "type", "ref": { "role": "textbox", "nameContains": "Assign to" }, "text": "ana" },
+        { "kind": "type", "ref": { "role": "textbox", "nameContains": "Add a tag" }, "text": "billing" },
+        { "kind": "click", "ref": { "role": "button", "nameContains": "Save triage" } },
+        { "kind": "wait", "ms": 900 },
+        { "kind": "done", "outcome": "success", "summary": "Assigned #1027 to ana and tagged it billing. The page confirmed the triage was saved." }
+      ]
+    },
+    "ben": {
+      "decisions": [
+        { "kind": "type", "ref": { "role": "textbox", "nameContains": "Work email" }, "text": "ben@meridian.test" },
+        { "kind": "type", "ref": { "role": "password", "nameContains": "Password" }, "text": "support123" },
+        { "kind": "click", "ref": { "role": "button", "nameContains": "Sign in" } },
+        { "kind": "wait", "ms": 700 },
+        { "kind": "navigate", "url": "/tickets/1027" },
+        { "kind": "wait", "ms": 700 },
+        { "kind": "type", "ref": { "role": "textbox", "nameContains": "Assign to" }, "text": "ben" },
+        { "kind": "type", "ref": { "role": "textbox", "nameContains": "Add a tag" }, "text": "urgent" },
+        { "kind": "click", "ref": { "role": "button", "nameContains": "Save triage" } },
+        { "kind": "wait", "ms": 900 },
+        { "kind": "done", "outcome": "success", "summary": "Assigned #1027 to ben and tagged it urgent. The page confirmed the triage was saved." }
+      ]
+    }
+  }
+}

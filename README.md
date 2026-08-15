@@ -110,6 +110,40 @@ agent's perception and cannot receive pointer events, so watching a run never
 changes what the run does. Use plain `--headed` for a real-speed browser
 window without the overlay.
 
+### Multi-user scenarios
+
+Some bugs only exist when two people use the app at once. A scenario can run
+several simulated users together, each in their own browser context with their
+own session and cookies:
+
+```yaml
+scenarios:
+  concurrent_triage:
+    concurrent:
+      - name: ana
+        persona: agent
+        goal: Open ticket #1027, assign it to yourself and tag it "billing".
+      - name: ben
+        persona: agent
+        goal: Open ticket #1027, assign it to yourself and tag it "urgent".
+    checks:
+      - { type: http, url: /api/state, path: "tickets.26.tags", count: 2 }
+```
+
+Turns are interleaved on a **seeded schedule** rather than by racing real
+threads — deliberately, because an interleaving you can reproduce is what turns
+"sometimes people clobber each other" into a fixture you can replay. Every step
+records who took it, and reproduction trails name them:
+
+```
+[ben] Type "ben@meridian.test" into "Work email" → [ana] Type "ana@meridian.test" …
+→ [ben] Click "Save triage" → [ana] Type "ana" into "Assign to" → [ana] Click "Save triage"
+```
+
+In the bundled example that catches a textbook **lost update**: both agents are
+told their triage saved, and one agent's tag is silently gone
+(`expected count 2, got ["billing"]`).
+
 ### Findings, evidence and replay
 
 Every session produces a categorised report — real problems first, then
@@ -413,4 +447,4 @@ npm test          # 95 tests: seeded rng, config, worldgen, evaluators,
 npm run build
 ```
 
-MIT © Jasroop Sangha
+Apache License 2.0 © Jasroop Sangha

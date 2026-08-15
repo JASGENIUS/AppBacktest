@@ -108,6 +108,8 @@ export async function runBacktest(args: RunBacktestArgs): Promise<BacktestReport
       records.push(
         await executeRun(plan, {
           provider,
+          // Concurrent runs need an independent provider per simulated person.
+          makeProvider: () => createProvider(config.provider),
           makeDriver: createDriver,
           config,
           outDirAbs,

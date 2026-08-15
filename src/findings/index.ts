@@ -48,13 +48,14 @@ function reproduction(record: RunRecord): string[] {
     const a = step.action;
     if (a.kind === "done" || a.kind === "give_up" || a.kind === "wait") continue;
     const name = step.target?.name ? ` “${step.target.name}”` : "";
-    if (a.kind === "navigate") trail.push(`Go to ${a.url}`);
-    else if (a.kind === "click") trail.push(`Click${name}`);
-    else if (a.kind === "type") trail.push(`Type “${a.text.slice(0, 30)}”${name ? ` into${name}` : ""}`);
-    else if (a.kind === "select") trail.push(`Select “${a.value}”${name}`);
-    else if (a.kind === "upload") trail.push(`Attach a file${name}`);
-    else if (a.kind === "press") trail.push(`Press ${a.key}`);
-    else if (a.kind === "scroll") trail.push(`Scroll ${a.direction}`);
+    const who = step.actor ? `[${step.actor}] ` : "";
+    if (a.kind === "navigate") trail.push(`${who}Go to ${a.url}`);
+    else if (a.kind === "click") trail.push(`${who}Click${name}`);
+    else if (a.kind === "type") trail.push(`${who}Type “${a.text.slice(0, 30)}”${name ? ` into${name}` : ""}`);
+    else if (a.kind === "select") trail.push(`${who}Select “${a.value}”${name}`);
+    else if (a.kind === "upload") trail.push(`${who}Attach a file${name}`);
+    else if (a.kind === "press") trail.push(`${who}Press ${a.key}`);
+    else if (a.kind === "scroll") trail.push(`${who}Scroll ${a.direction}`);
   }
   return trail.length > MAX_REPRO_STEPS
     ? [...trail.slice(0, MAX_REPRO_STEPS), `… ${trail.length - MAX_REPRO_STEPS} more actions`]

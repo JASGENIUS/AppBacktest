@@ -84,7 +84,8 @@ export function buildTimeline(record: RunRecord): TimelineEntry[] {
       atMs: at,
       kind: "action",
       stepIndex: step.index,
-      label: describeAction(step.action, step.target?.name),
+      // In a multi-user run, who did it is the most important part of the line.
+      label: `${step.actor ? `${step.actor}: ` : ""}${describeAction(step.action, step.target?.name)}`,
       ...(step.screenshot ? { screenshot: step.screenshot } : {}),
       ...(step.perturbations.length > 0
         ? { detail: `perturbation: ${step.perturbations.map((p) => p.kind).join(", ")}` }

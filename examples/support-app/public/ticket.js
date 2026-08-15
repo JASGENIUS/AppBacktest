@@ -55,6 +55,7 @@ async function load() {
   document.getElementById("badge").value = ticket.priority;
   document.getElementById("status-line").textContent = `Status: ${ticket.status}`;
   document.getElementById("notes").src = `/notes-frame?id=${ticketId}`;
+  renderTriage();
 }
 
 document.getElementById("escalate-btn").addEventListener("click", () => {
@@ -115,3 +116,54 @@ submitBtn.addEventListener("click", async () => {
 });
 
 load();
+
+// --- Triage (the concurrent-edit surface) ---
+const triageState = document.getElementById("triage-state");
+
+function renderTriage() {
+  if (!ticket) return;
+  const tags = (ticket.tags ?? []).join(", ") || "none";
+  triageState.textContent = `Assigned to: ${ticket.assignee || "nobody"} · tags: ${tags}`;
+}
+
+document.getElementById("save-triage").addEventListener("click", async () => {
+  const assignee = document.getElementById("assignee").value.trim();
+  const tag = document.getElementById("tag").value.trim();
+  const tags = tag ? [...(ticket.tags ?? []), tag] : ticket.tags ?? [];
+  const res = await fetch(`/api/tickets/${ticketId}/triage`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ assignee, tags, version: ticket.version }),
+  });
+  if (res.ok) {
+    const body = await res.json();
+    ticket = body.ticket;
+    renderTriage();
+    showToast("Triage saved");
+    return;
+  }
+
+  if (res.status === 409) {
+    // Only the FIXED build produces this. Detecting the conflict is half the
+    // fix; recovering from it is the other half — reload the current state and
+    // reapply this user's intent on top, so nobody's work is lost.
+    const fresh = await (await fetch(`/api/tickets/${ticketId}`)).json();
+    ticket = fresh;
+    const merged = tag ? [...new Set([...(fresh.tags ?? []), tag])] : fresh.tags ?? [];
+    const retry = await fetch(`/api/tickets/${ticketId}/triage`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ assignee, tags: merged, version: fresh.version }),
+    });
+    if (retry.ok) {
+      ticket = (await retry.json()).ticket;
+      renderTriage();
+      showToast("Triage saved");
+    } else {
+      showToast("Someone else changed this ticket. Reload before saving.");
+    }
+    return;
+  }
+
+  showToast("Could not save triage");
+});

@@ -2,8 +2,10 @@ import type {
   AppBacktestConfig,
   PatienceLevel,
   PersonaConfig,
+  ResolvedActor,
   ResolvedPersona,
   RunPlan,
+  ScenarioConfig,
   WorldPlan,
 } from "./types";
 import { newRunId } from "./ids";
@@ -29,6 +31,32 @@ export function resolvePersona(p: PersonaConfig | undefined): ResolvedPersona {
   };
 }
 
+/** Look up a persona reference, with an actionable error when it is unknown. */
+function lookupPersona(
+  config: AppBacktestConfig,
+  scenarioKey: string,
+  ref: string | PersonaConfig | undefined,
+): { personaKey: string; persona: ResolvedPersona } {
+  if (typeof ref === "string") {
+    const found = config.personas[ref];
+    if (!found) {
+      const known = Object.keys(config.personas).join(", ") || "(none defined)";
+      throw new Error(
+        `Scenario "${scenarioKey}" references unknown persona "${ref}" — defined personas: ${known}`,
+      );
+    }
+    return { personaKey: ref, persona: resolvePersona(found) };
+  }
+  return { personaKey: INLINE_PERSONA_KEY, persona: resolvePersona(ref) };
+}
+
+function resolveActors(config: AppBacktestConfig, scenarioKey: string, scenario: ScenarioConfig): ResolvedActor[] {
+  return (scenario.concurrent ?? []).map((actor) => {
+    const { personaKey, persona } = lookupPersona(config, scenarioKey, actor.persona);
+    return { name: actor.name, personaKey, goal: actor.goal, persona };
+  });
+}
+
 /**
  * seed → deterministic WorldPlan. Sub-seeds key on stable identity
  * (`${seed}:${scenarioKey}:${i}`), never position: adding or removing a
@@ -37,23 +65,17 @@ export function resolvePersona(p: PersonaConfig | undefined): ResolvedPersona {
 export function generateWorld(config: AppBacktestConfig, seed: string): WorldPlan {
   const runs: RunPlan[] = [];
   for (const [scenarioKey, scenario] of Object.entries(config.scenarios)) {
-    let personaKey: string;
-    let personaConfig: PersonaConfig;
-    if (typeof scenario.persona === "string") {
-      const found = config.personas[scenario.persona];
-      if (!found) {
-        const known = Object.keys(config.personas).join(", ") || "(none defined)";
-        throw new Error(
-          `Scenario "${scenarioKey}" references unknown persona "${scenario.persona}" — defined personas: ${known}`,
-        );
-      }
-      personaKey = scenario.persona;
-      personaConfig = found;
-    } else {
-      personaKey = INLINE_PERSONA_KEY;
-      personaConfig = scenario.persona;
-    }
-    const persona = resolvePersona(personaConfig);
+    const actors = resolveActors(config, scenarioKey, scenario);
+    const isConcurrent = actors.length > 0;
+
+    // For a concurrent scenario the top-level plan fields describe actor 0,
+    // so every consumer that predates multi-user still reads something true.
+    const primary = isConcurrent
+      ? { personaKey: actors[0]!.personaKey, persona: actors[0]!.persona, goal: actors[0]!.goal }
+      : (() => {
+          const { personaKey, persona } = lookupPersona(config, scenarioKey, scenario.persona);
+          return { personaKey, persona, goal: scenario.goal ?? "" };
+        })();
 
     for (let i = 0; i < config.runs; i++) {
       const subSeed = `${seed}:${scenarioKey}:${i}`;
@@ -61,10 +83,11 @@ export function generateWorld(config: AppBacktestConfig, seed: string): WorldPla
         runId: newRunId(scenarioKey, subSeed),
         subSeed,
         scenarioKey,
-        personaKey,
-        goal: scenario.goal,
-        persona,
+        personaKey: primary.personaKey,
+        goal: primary.goal,
+        persona: primary.persona,
         checks: scenario.checks,
+        ...(isConcurrent ? { actors } : {}),
       });
     }
   }

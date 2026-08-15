@@ -1,0 +1,57 @@
+# Meridian — MULTI-USER scenario.
+#
+# Two support agents triage the same ticket at the same time. Each gets their
+# own browser context (own session and cookies), and turns are interleaved on
+# a seeded schedule — so the interleaving is reproducible, which is what makes
+# a lost update a replayable fixture rather than a ghost story.
+#
+# Planted bug E: /api/tickets/:id/triage does read-modify-write with no version
+# check, so whoever saves second silently erases the other's work — and neither
+# agent is told anything.
+
+app:
+  name: Meridian Support
+  url: http://localhost:4175
+  command: node server.js
+  resetHook: { method: POST, url: /api/reset }
+
+provider:
+  type: fixture
+  path: ./fixtures/concurrent.json
+
+personas:
+  agent:
+    device: desktop
+    patience: normal
+    doubleClickChance: 0.0
+    traits: ["works tickets all day", "trusts the interface"]
+
+scenarios:
+  concurrent_triage:
+    concurrent:
+      - name: ana
+        persona: agent
+        goal: >
+          Sign in as ana@meridian.test with password "support123", open ticket
+          #1027, assign it to yourself as "ana", tag it "billing" and save.
+      - name: ben
+        persona: agent
+        goal: >
+          Sign in as ben@meridian.test with password "support123", open ticket
+          #1027, assign it to yourself as "ben", tag it "urgent" and save.
+    checks:
+      # Whoever saved last legitimately owns the assignment — but BOTH tags
+      # must survive. A missing tag means one agent's work vanished silently.
+      - { type: http, url: /api/state, path: "tickets.26.tags", count: 2 }
+
+runs: 1
+browser: { headless: true, actionTimeoutMs: 8000 }
+
+source:
+  enabled: true
+  root: .
+
+ux:
+  level: conservative
+  minConfidence: 0.7
+  maxRecommendations: 3
