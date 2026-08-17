@@ -56,6 +56,8 @@ export function elementLine(el: PerceivedElement): string {
   const annotations: string[] = [];
   if (el.value !== undefined) annotations.push(`value="${truncate(el.value, VALUE_MAX)}"`);
   if (el.disabled) annotations.push("disabled");
+  if (el.selected === true) annotations.push("SELECTED");
+  else if (el.selected === false) annotations.push("not selected");
   if (el.occluded) annotations.push("COVERED - behind an overlay, cannot be clicked yet");
   if (el.options && el.options.length > 0) {
     const opts = el.options

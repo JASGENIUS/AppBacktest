@@ -166,22 +166,38 @@ function detect(record: RunRecord, timeline: TimelineEntry[]): Draft[] {
   }
 
   // --- The executor refused to act on a changed element ---
+  //
+  // A single stale target is NOT a defect. Every SPA re-renders between the
+  // moment a control is seen and the moment it is clicked, and the identity
+  // guard doing its job is the system working, not the app failing. Reporting
+  // each one buried a real-app report under five of these. Only a control that
+  // keeps moving — or one that moved in a run that then failed — earns a place.
+  const staleByControl = new Map<string, number[]>();
   for (const step of record.steps) {
-    if (step.result.errorKind === "stale_target") {
-      drafts.push({
-        key: `stale:${scenario}:${step.target?.role ?? "?"}:${step.target?.name ?? "?"}`,
-        category: "functional_bug",
-        severity: "medium",
-        baseConfidence: 0.6,
-        title: `Element changed underneath the user: “${step.target?.name ?? "unknown"}”`,
-        observed:
-          `The control the user was about to act on changed identity or disappeared between seeing it and clicking it. ` +
-          `AppBacktest refused to dispatch rather than clicking the wrong thing.`,
-        expected: "Controls should stay stable while the user is reaching for them.",
-        evidence: [step.result.error ?? "target changed before dispatch"],
-        atMs: offsetOfStep(record, step.index),
-      });
-    }
+    if (step.result.errorKind !== "stale_target") continue;
+    const key = `${step.target?.role ?? "?"}:${step.target?.name ?? "?"}`;
+    staleByControl.set(key, [...(staleByControl.get(key) ?? []), step.index]);
+  }
+  const runFailed = ev.verdict === "FAIL";
+  for (const [key, indexes] of staleByControl) {
+    const repeated = indexes.length >= 2;
+    if (!repeated && !runFailed) continue; // routine re-render — stay quiet
+    const step = record.steps.find((s) => s.index === indexes[0]);
+    drafts.push({
+      key: `stale:${scenario}:${key}`,
+      category: "functional_bug",
+      severity: repeated ? "medium" : "low",
+      baseConfidence: repeated ? 0.6 : 0.35,
+      title: `Control moved while the user was reaching for it: “${step?.target?.name ?? "unknown"}”`,
+      observed:
+        `The control changed identity or disappeared between being seen and being clicked` +
+        (repeated ? `, ${indexes.length} times in one workflow. ` : `. `) +
+        `AppBacktest refused to dispatch rather than clicking whatever took its place. ` +
+        `Some re-rendering is normal; a control that keeps moving is a mis-tap waiting to happen.`,
+      expected: "Controls a user is about to press should hold still.",
+      evidence: [step?.result.error ?? "target changed before dispatch"],
+      atMs: offsetOfStep(record, indexes[0]!),
+    });
   }
 
   // --- Harness/setup, reported honestly rather than as an app bug ---

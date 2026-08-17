@@ -263,6 +263,12 @@ export interface PerceivedElement {
   disabled?: boolean;
   /** Another element covers this one's center point (e.g. a modal is open). */
   occluded?: boolean;
+  /**
+   * Toggle state from aria-pressed / aria-selected / aria-checked (or a
+   * checkbox's own checked). Without this, a chosen option is indistinguishable
+   * from an unchosen one and agents re-click controls that already worked.
+   */
+  selected?: boolean;
   /** Present on selects: legal options (capped at 20). */
   options?: SelectOption[];
   /**

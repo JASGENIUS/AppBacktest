@@ -98,7 +98,14 @@ export function printRunEnd(record: RunRecord): void {
     }
   }
   if (ev.reverseDiscrepancy) {
-    console.log(pc.yellow("  ◀ REVERSE DISCREPANCY: the agent thought it failed, but every check passed (usability signal)."));
+    console.log(
+      ev.ending === "max_steps"
+        ? pc.yellow(
+            "  ◀ PASSED WITHOUT FINISHING: the simulated user ran out of steps before completing the task, " +
+              "yet every check passed — the checks are probably too weak to be measuring this workflow.",
+          )
+        : pc.yellow("  ◀ REVERSE DISCREPANCY: the agent thought it failed, but every check passed (usability signal)."),
+    );
   }
   for (const r of ev.checkResults.filter((c) => !c.passed)) {
     const label = r.errored ? pc.magenta("check errored") : pc.red("check failed");

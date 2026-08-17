@@ -133,6 +133,16 @@ export const WALKER_SOURCE = `((framePrefix) => {
       nth: i.nth,
     };
     if (el.disabled === true || el.getAttribute("aria-disabled") === "true") item.disabled = true;
+    // Toggle state. Without this a selected option looks identical to an
+    // unselected one, and an agent has no way to know its click registered —
+    // it just clicks again, and again.
+    const pressed = el.getAttribute("aria-pressed");
+    const selected = el.getAttribute("aria-selected");
+    const checkedAttr = el.getAttribute("aria-checked");
+    if (pressed === "true" || selected === "true" || checkedAttr === "true") item.selected = true;
+    else if (pressed === "false" || selected === "false" || checkedAttr === "false") item.selected = false;
+    else if (el.checked === true) item.selected = true;
+    else if (el.checked === false && (i.role === "checkbox" || i.role === "radio")) item.selected = false;
     if (occluded) item.occluded = true;
     // Never read the VALUE of a password field back out of the page.
     if (i.role === "password") item.sensitive = true;

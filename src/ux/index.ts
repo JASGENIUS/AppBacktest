@@ -216,26 +216,32 @@ function retryLoop(record: RunRecord): Signal | null {
     arr.push(step.index);
     counts.set(key, arr);
   }
-  for (const [key, indexes] of counts) {
-    if (indexes.length < 3) continue;
-    const label = record.steps.find((s) => norm(s.target?.name ?? "") === key)?.target?.name ?? key;
-    return {
-      key: `ux:retry-loop:${key}`,
-      title: `Repeated attempts on “${label}”`,
-      observed: `The user operated “${label}” ${indexes.length} times during a single workflow.`,
-      userImpact:
-        "Repeating a control usually means its effect was unclear — and repeated commits can create duplicates.",
-      suggestion:
-        "Consider making the result of this control obvious after the first use, and disabling it while it is working.",
-      confidence: 0.7,
-      severity: "low",
-      category: "usability",
-      evidence: [`“${label}” operated at steps ${indexes.join(", ")}`],
-      atMs: offsetOfStep(record, indexes[indexes.length - 1]!),
-      minLevel: "balanced",
-    };
-  }
-  return null;
+  // Report the worst offender, not just the first one found.
+  const worst = [...counts.entries()].sort((a, b) => b[1].length - a[1].length)[0];
+  if (!worst || worst[1].length < 3) return null;
+  const [key, indexes] = worst;
+  const label = record.steps.find((s) => norm(s.target?.name ?? "") === key)?.target?.name ?? key;
+  // Repetition IS the evidence. Three clicks is a hint worth holding back at
+  // conservative; five or more on one control is somebody visibly stuck, and
+  // suppressing that would hide the clearest friction signal there is.
+  const emphatic = indexes.length >= 5;
+  return {
+    key: `ux:retry-loop:${key}`,
+    title: `Repeated attempts on “${label}”`,
+    observed:
+      `The user operated “${label}” ${indexes.length} times during a single workflow` +
+      (emphatic ? ", which reads as someone unsure whether it was working." : "."),
+    userImpact:
+      "Repeating a control usually means its effect was unclear — and repeated commits can create duplicates.",
+    suggestion:
+      "Consider making the result of this control obvious after the first use, and disabling it while it is working.",
+    confidence: emphatic ? 0.85 : 0.7,
+    severity: emphatic ? "medium" : "low",
+    category: "usability",
+    evidence: [`“${label}” operated at steps ${indexes.join(", ")}`],
+    atMs: offsetOfStep(record, indexes[indexes.length - 1]!),
+    minLevel: emphatic ? "conservative" : "balanced",
+  };
 }
 
 /** Signal: the same page was revisited many times — navigation confusion. */

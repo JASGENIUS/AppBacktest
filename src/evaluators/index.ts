@@ -378,7 +378,13 @@ export function evaluate(args: {
     // Only a CLEAN assertion failure against a confident belief is a discrepancy.
     discrepancy: failureKind === "assertion" && belief?.outcome === "success",
     // Agent thought it failed / was unsure but the app actually worked.
-    reverseDiscrepancy: verdict === "PASS" && belief !== null && belief.outcome !== "success",
+    // A green run where the simulated user never actually finished is not a
+    // pass worth trusting — it usually means the checks are too weak to be
+    // measuring the workflow at all. `max_steps` leaves belief null, so it
+    // has to be named explicitly or it slips through as a clean PASS.
+    reverseDiscrepancy:
+      verdict === "PASS" &&
+      ((belief !== null && belief.outcome !== "success") || ending === "max_steps"),
     passedWithObservations:
       verdict === "PASS" && observations.some((o) => o.severity === "error"),
   };
