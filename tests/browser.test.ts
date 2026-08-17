@@ -195,6 +195,63 @@ describe("perception hygiene", () => {
   });
 });
 
+/**
+ * Reach into the live page. Deliberately a cast rather than a method on
+ * BrowserDriver — the overlay is an implementation detail and does not belong
+ * on the interface the engine programs against.
+ */
+function inPage<T>(expression: string): Promise<T> {
+  const page = (driver as unknown as { page: { evaluate: (e: string) => Promise<T> } }).page;
+  return page.evaluate(expression);
+}
+
+describe("drawn cursor", () => {
+  /**
+   * The cursor is evidence, not decoration: without it a replay screenshot
+   * cannot show WHICH control the simulated user hit. It ships in headless
+   * runs too, which means it must be provably invisible to the agent — an
+   * overlay the walker could perceive, or that could swallow a click, would
+   * corrupt every run.
+   */
+  it("exists in a headless run and sits on the element just acted on", async () => {
+    const p = await driver.perceive();
+    const btn = p.elements.find((e) => e.name === "Count me")!;
+    await driver.act({ kind: "click", ref: btn.ref }, { persona, rng });
+
+    const placed = await inPage<{ present: boolean; onTarget?: boolean }>(`(() => {
+      const c = document.getElementById("__abt_cursor");
+      if (!c) return { present: false };
+      const target = document.getElementById("counter-btn").getBoundingClientRect();
+      const cx = parseFloat(c.style.left) + 10, cy = parseFloat(c.style.top) + 10;
+      return {
+        present: true,
+        onTarget:
+          cx >= target.left && cx <= target.right && cy >= target.top && cy <= target.bottom,
+      };
+    })()`);
+
+    expect(placed.present, "no cursor drawn in a headless run").toBe(true);
+    expect(placed.onTarget, "cursor was not placed on the clicked control").toBe(true);
+  });
+
+  it("is never perceived, and never blocks the click underneath it", async () => {
+    const p = await driver.perceive();
+    const overlayRefs = p.elements.filter((e) => /__abt_|appbacktest/i.test(e.name));
+    expect(overlayRefs, "AppBacktest's own overlay leaked into perception").toEqual([]);
+
+    // The cursor is parked on this button from the previous case; clicking it
+    // again must still reach the app (pointer-events:none doing its job).
+    const btn = p.elements.find((e) => e.name === "Count me")!;
+    const outcome = await driver.act({ kind: "click", ref: btn.ref }, { persona, rng });
+    expect(outcome.ok, `overlay swallowed the click: ${outcome.error}`).toBe(true);
+  });
+
+  it("draws no HUD unless watch mode asked for one", async () => {
+    const hud = await inPage<boolean>(`document.getElementById("__abt_hud") === null`);
+    expect(hud, "the watch HUD appeared in a headless run and would cover the app").toBe(true);
+  });
+});
+
 describe("redaction at capture", () => {
   /**
    * The privacy guarantee that matters: a secret typed into the real page

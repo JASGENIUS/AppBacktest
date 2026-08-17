@@ -412,8 +412,17 @@ export interface StepRecord {
   perturbations: PerturbationEvent[];
   incidents: IncidentDrain;
   result: StepResult;
-  /** POSIX-style path relative to the run directory. */
+  /**
+   * The page as the simulated user SAW it, before deciding. POSIX-style path
+   * relative to the run directory.
+   */
   screenshot?: string;
+  /**
+   * The page just after the action, with the drawn cursor still resting on the
+   * control that was hit. This is the frame that shows WHERE the user clicked;
+   * the pre-action shot cannot, because the target is not chosen yet.
+   */
+  screenshotAfter?: string;
   tsStart: string;
   tsEnd: string;
 }

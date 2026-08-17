@@ -207,6 +207,14 @@ async function executeConcurrentRun(
         persona: state.actor.persona,
         rng: state.rng.fork(`step:${state.stepsTaken}`),
       });
+
+      // The click frame, cursor still on target — see StepRecord.screenshotAfter.
+      const actShotRel = `steps/${String(stepIndex).padStart(3, "0")}-act.png`;
+      const actShot = await state.driver
+        .screenshot(join(runDirAbs, actShotRel))
+        .then(() => actShotRel)
+        .catch(() => undefined);
+
       const incidents = state.driver.drainIncidents();
       prevEnd = Date.now();
 
@@ -237,6 +245,7 @@ async function executeConcurrentRun(
           urlAfter: outcome.urlAfter,
         },
         screenshot: shotRel,
+        ...(actShot ? { screenshotAfter: actShot } : {}),
         tsStart,
         tsEnd: new Date().toISOString(),
       });
@@ -495,6 +504,15 @@ export async function executeRun(plan: RunPlan, deps: RunDeps): Promise<RunRecor
         "ref" in action && typeof action.ref === "string" ? driver.describeRef(action.ref) : undefined;
       const rng = new Rng(plan.subSeed).fork("perturb").fork(`step:${i}`);
       const outcome = await driver.act(action, { persona: plan.persona, rng });
+
+      // Capture the click itself, cursor still on the target. Taken before
+      // draining incidents so the frame is as close to the action as possible.
+      const actShotRel = `steps/${String(i).padStart(3, "0")}-act.png`;
+      const actShot = await driver
+        .screenshot(join(runDirAbs, actShotRel))
+        .then(() => actShotRel)
+        .catch(() => undefined);
+
       const incidents = driver.drainIncidents();
       prevEnd = Date.now();
 
@@ -528,6 +546,7 @@ export async function executeRun(plan: RunPlan, deps: RunDeps): Promise<RunRecor
           urlAfter: outcome.urlAfter,
         },
         screenshot: shotRel,
+        ...(actShot ? { screenshotAfter: actShot } : {}),
         tsStart,
         tsEnd: new Date().toISOString(),
       };

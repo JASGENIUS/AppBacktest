@@ -176,6 +176,16 @@ export async function replayRun(record: RunRecord, deps: ReplayDeps): Promise<Ru
           rng: NEVER_RNG,
           forcedPerturbations: recorded.perturbations,
         });
+
+        // The click frame, cursor on target. A replayed regression is the
+        // artifact people actually share, so it needs this as much as a live
+        // run does. Screenshots are output only — they cannot affect grading.
+        const actShotRel = `steps/${String(recorded.index).padStart(3, "0")}-act.png`;
+        const actShot = await driver
+          .screenshot(join(runDirAbs, actShotRel))
+          .then(() => actShotRel)
+          .catch(() => undefined);
+
         const incidents = driver.drainIncidents();
 
         steps.push({
@@ -195,6 +205,7 @@ export async function replayRun(record: RunRecord, deps: ReplayDeps): Promise<Ru
             urlAfter: result.urlAfter,
           },
           screenshot: shotRel,
+          ...(actShot ? { screenshotAfter: actShot } : {}),
           tsStart,
           tsEnd: new Date().toISOString(),
         });

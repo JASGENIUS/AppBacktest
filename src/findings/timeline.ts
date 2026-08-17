@@ -86,7 +86,12 @@ export function buildTimeline(record: RunRecord): TimelineEntry[] {
       stepIndex: step.index,
       // In a multi-user run, who did it is the most important part of the line.
       label: `${step.actor ? `${step.actor}: ` : ""}${describeAction(step.action, step.target?.name)}`,
-      ...(step.screenshot ? { screenshot: step.screenshot } : {}),
+      // Prefer the click frame: it carries the drawn cursor on the control that
+      // was hit. The pre-action shot is the fallback for records written before
+      // screenshotAfter existed, and for actions with no target (wait, back).
+      ...(step.screenshotAfter ?? step.screenshot
+        ? { screenshot: step.screenshotAfter ?? step.screenshot }
+        : {}),
       ...(step.perturbations.length > 0
         ? { detail: `perturbation: ${step.perturbations.map((p) => p.kind).join(", ")}` }
         : {}),

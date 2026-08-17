@@ -231,7 +231,12 @@ export const FILE_INPUT_SOURCE = `((sel) => {
 })`;
 
 /**
- * Watch mode: a drawn cursor + a HUD, injected on every document.
+ * The drawn cursor, injected on every document.
+ *
+ * This runs in EVERY run, not just watch mode, because the cursor is what
+ * makes a replay legible — without it a screenshot cannot show which control
+ * the simulated user actually hit. Watch mode adds the HUD and the glide
+ * animation on top (signalled by window.__abt_hud_goal being defined).
  *
  * Everything here is marked data-abt-ui (excluded from perception) and
  * pointer-events:none, so it can neither be perceived nor occlude a real
@@ -240,6 +245,7 @@ export const FILE_INPUT_SOURCE = `((sel) => {
 export const WATCH_OVERLAY_SOURCE = `(() => {
   const install = () => {
     if (!document.body || document.getElementById("__abt_cursor")) return;
+    const watch = typeof window.__abt_hud_goal === "string";
     const mk = (id, css) => {
       const el = document.createElement("div");
       el.id = id;
@@ -251,10 +257,21 @@ export const WATCH_OVERLAY_SOURCE = `(() => {
       "position:fixed;left:-80px;top:-80px;width:20px;height:20px;border-radius:50%;" +
       "background:rgba(255,72,72,.30);border:2px solid #ff4848;z-index:2147483647;" +
       "box-shadow:0 0 0 4px rgba(255,72,72,.14);" +
-      "transition:left .42s cubic-bezier(.4,0,.2,1),top .42s cubic-bezier(.4,0,.2,1)");
+      // Headless runs place the cursor instantly: a transition would race the
+      // screenshot and catch the dot mid-flight, somewhere it never clicked.
+      (watch ? "transition:left .42s cubic-bezier(.4,0,.2,1),top .42s cubic-bezier(.4,0,.2,1)" : ""));
     const ring = mk("__abt_ring",
       "position:fixed;left:-80px;top:-80px;width:20px;height:20px;border-radius:50%;" +
       "border:2px solid #ff4848;opacity:0;z-index:2147483647");
+    const style = document.createElement("style");
+    style.setAttribute("data-abt-ui", "");
+    style.textContent =
+      "@keyframes __abt_pulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(3.4);opacity:0}}";
+    if (document.head) document.head.appendChild(style);
+    document.body.appendChild(cursor);
+    document.body.appendChild(ring);
+
+    if (!watch) return;
     const hud = mk("__abt_hud",
       "position:fixed;left:0;right:0;bottom:0;z-index:2147483646;background:rgba(16,18,22,.94);" +
       "color:#fff;font:13px/1.5 'Segoe UI',system-ui,sans-serif;padding:9px 16px;" +
@@ -265,23 +282,22 @@ export const WATCH_OVERLAY_SOURCE = `(() => {
       'AppBacktest &middot; simulated user <span id="__abt_step"></span></div>' +
       '<div id="__abt_goal" style="opacity:.7;margin-top:1px;font-size:12px;' + clamp + '"></div>' +
       '<div id="__abt_act" style="margin-top:3px;font-weight:600;' + clamp + '">starting up&hellip;</div>';
-    const style = document.createElement("style");
-    style.setAttribute("data-abt-ui", "");
-    style.textContent =
-      "@keyframes __abt_pulse{0%{transform:scale(1);opacity:.9}100%{transform:scale(3.4);opacity:0}}";
-    if (document.head) document.head.appendChild(style);
-    document.body.appendChild(cursor);
-    document.body.appendChild(ring);
     document.body.appendChild(hud);
-    if (window.__abt_hud_goal) {
-      const g = document.getElementById("__abt_goal");
-      if (g) g.textContent = window.__abt_hud_goal;
-    }
+    const g = document.getElementById("__abt_goal");
+    if (g) g.textContent = window.__abt_hud_goal;
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install);
   else install();
-  // Re-install if the app replaces the body (SPA route swaps).
-  new MutationObserver(install).observe(document.documentElement, { childList: true, subtree: false });
+  // Re-install if the app replaces the body (SPA route swaps). documentElement
+  // can still be null this early (init scripts run before parsing on
+  // about:blank and on brand-new documents), and observing null throws a
+  // page error that would surface as a finding against the app under test.
+  const watchBody = () => {
+    if (!document.documentElement) return false;
+    new MutationObserver(install).observe(document.documentElement, { childList: true, subtree: false });
+    return true;
+  };
+  if (!watchBody()) document.addEventListener("DOMContentLoaded", watchBody);
 })()`;
 
 /** Move the cursor to an element (or just update the HUD line). */

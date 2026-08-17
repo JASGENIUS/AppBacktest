@@ -141,12 +141,15 @@ class PlaywrightDriver implements BrowserDriver {
       }
     });
     await this.context.addInitScript(TRANSIENT_OBSERVER_SOURCE);
+    // The goal flag must be set BEFORE the overlay script reads it — that is
+    // what tells the overlay to draw the HUD and animate. Headless runs get
+    // the cursor alone, so replay screenshots still show where a click landed.
     if (this.opts.watch) {
       await this.context.addInitScript(
         `window.__abt_hud_goal = ${JSON.stringify(this.opts.goal ?? "")};`,
       );
-      await this.context.addInitScript(WATCH_OVERLAY_SOURCE);
     }
+    await this.context.addInitScript(WATCH_OVERLAY_SOURCE);
 
     this.page = await this.context.newPage();
     this.wirePage(this.page);
@@ -463,8 +466,12 @@ class PlaywrightDriver implements BrowserDriver {
   }
 
   /**
-   * Watch mode only: glide the drawn cursor onto the target and narrate the
-   * action in the HUD. Never throws — presentation must not fail a run.
+   * Put the drawn cursor on the target and narrate the action.
+   *
+   * Runs in every mode: the cursor is evidence, not decoration, and a replay
+   * screenshot without it cannot show which control was hit. Only the glide
+   * delay is watch-only — headless placement is instant so it costs nothing.
+   * Never throws; presentation must not fail a run.
    */
   private async showIntent(
     frame: Frame | undefined,
@@ -472,14 +479,15 @@ class PlaywrightDriver implements BrowserDriver {
     label: string,
     pulse: boolean,
   ): Promise<void> {
-    if (!this.opts.watch) return;
     try {
       const target = frame ?? this.mustPage().mainFrame();
       const step = `step ${this.actCount}`;
       await target.evaluate(
         `${WATCH_UPDATE_SOURCE}(${JSON.stringify(selector ?? null)}, ${JSON.stringify(label)}, ${pulse}, ${JSON.stringify(step)})`,
       );
-      if (selector) await this.mustPage().waitForTimeout(WATCH_CURSOR_SETTLE_MS);
+      if (selector && this.opts.watch) {
+        await this.mustPage().waitForTimeout(WATCH_CURSOR_SETTLE_MS);
+      }
     } catch {
       // overlay missing mid-navigation — irrelevant to the run
     }
