@@ -3,6 +3,7 @@
  */
 
 import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { chromium } from "playwright";
 import pc from "picocolors";
 import type { AppBacktestConfig } from "../core/types";
@@ -10,9 +11,13 @@ import type { AppBacktestConfig } from "../core/types";
 export function preflight(config: AppBacktestConfig, opts: { needProvider: boolean }): void {
   const problems: string[] = [];
 
+  // .env is loaded from the working directory, NOT from the config's directory.
+  // Naming the exact file removes the guesswork when the two differ.
+  const envPath = join(process.cwd(), ".env").replace(/\\/g, "/");
+
   if (opts.needProvider && config.provider.type === "anthropic" && !process.env.ANTHROPIC_API_KEY) {
     problems.push(
-      "ANTHROPIC_API_KEY not set — add it to .env, or use provider.type: fixture for a zero-key run",
+      `ANTHROPIC_API_KEY not set — add it to ${envPath}, or use provider.type: fixture for a zero-key run`,
     );
   }
   if (
@@ -22,7 +27,7 @@ export function preflight(config: AppBacktestConfig, opts: { needProvider: boole
     !process.env[config.provider.apiKeyEnv]
   ) {
     problems.push(
-      `${config.provider.apiKeyEnv} not set — the openai_compatible provider needs it in .env (or drop apiKeyEnv for keyless endpoints)`,
+      `${config.provider.apiKeyEnv} not set — the openai_compatible provider needs it in ${envPath} (or drop apiKeyEnv for keyless endpoints)`,
     );
   }
 

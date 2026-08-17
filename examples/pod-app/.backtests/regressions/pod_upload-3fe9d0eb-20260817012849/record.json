@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "appbacktestVersion": "0.1.0",
-  "runId": "pod_upload-3fe9d0eb-20260817012213",
+  "runId": "pod_upload-3fe9d0eb-20260817012849",
   "seed": "555001",
   "subSeed": "555001:pod_upload:1",
   "scenarioKey": "pod_upload",
@@ -43,7 +43,7 @@
       "count": 1
     }
   ],
-  "startedAt": "2026-08-17T09:22:18.810Z",
+  "startedAt": "2026-08-17T09:28:54.199Z",
   "steps": [
     {
       "index": 0,
@@ -77,8 +77,8 @@
         "urlAfter": "http://localhost:4173/loads/38419"
       },
       "screenshot": "steps/000.png",
-      "tsStart": "2026-08-17T09:22:19.432Z",
-      "tsEnd": "2026-08-17T09:22:19.532Z"
+      "tsStart": "2026-08-17T09:28:54.686Z",
+      "tsEnd": "2026-08-17T09:28:54.800Z"
     },
     {
       "index": 1,
@@ -114,8 +114,8 @@
         "urlAfter": "http://localhost:4173/loads/38419"
       },
       "screenshot": "steps/001.png",
-      "tsStart": "2026-08-17T09:22:19.532Z",
-      "tsEnd": "2026-08-17T09:22:20.029Z"
+      "tsStart": "2026-08-17T09:28:54.800Z",
+      "tsEnd": "2026-08-17T09:28:55.292Z"
     },
     {
       "index": 2,
@@ -150,8 +150,8 @@
         "urlAfter": "http://localhost:4173/loads/38419"
       },
       "screenshot": "steps/002.png",
-      "tsStart": "2026-08-17T09:22:20.029Z",
-      "tsEnd": "2026-08-17T09:22:20.073Z"
+      "tsStart": "2026-08-17T09:28:55.292Z",
+      "tsEnd": "2026-08-17T09:28:55.340Z"
     },
     {
       "index": 3,
@@ -189,12 +189,12 @@
         "urlAfter": "http://localhost:4173/loads/38419"
       },
       "screenshot": "steps/003.png",
-      "tsStart": "2026-08-17T09:22:20.073Z",
-      "tsEnd": "2026-08-17T09:22:20.422Z"
+      "tsStart": "2026-08-17T09:28:55.340Z",
+      "tsEnd": "2026-08-17T09:28:55.683Z"
     },
     {
       "index": 4,
-      "elapsedMs": 1,
+      "elapsedMs": 0,
       "preUrl": "http://localhost:4173/loads/38419",
       "perceptionDigest": "62ab739c58adf54555bfef45b6f977acd3b01c3ed71c1c4870c02c48618ab649",
       "perception": {
@@ -215,7 +215,7 @@
         "transientEvents": [
           {
             "text": "Upload received",
-            "atMs": 1786958540830
+            "atMs": 1786958936075
           }
         ],
         "dialogs": [],
@@ -226,8 +226,8 @@
         "urlAfter": "http://localhost:4173/loads/38419"
       },
       "screenshot": "steps/004.png",
-      "tsStart": "2026-08-17T09:22:20.423Z",
-      "tsEnd": "2026-08-17T09:22:21.951Z"
+      "tsStart": "2026-08-17T09:28:55.683Z",
+      "tsEnd": "2026-08-17T09:28:57.224Z"
     },
     {
       "index": 5,
@@ -257,8 +257,8 @@
         "urlAfter": "http://localhost:4173/loads/38419"
       },
       "screenshot": "steps/005.png",
-      "tsStart": "2026-08-17T09:22:21.951Z",
-      "tsEnd": "2026-08-17T09:22:21.983Z"
+      "tsStart": "2026-08-17T09:28:57.224Z",
+      "tsEnd": "2026-08-17T09:28:57.266Z"
     }
   ],
   "observations": [],
@@ -298,7 +298,7 @@
         },
         "passed": false,
         "errored": false,
-        "actual": "[{\"at\":\"2026-08-17T09:22:20.825Z\",\"atMs\":1786958540825,\"bytes\":409600,\"filename\":\"upload.png\",\"id\":1,\"notes\":\"Delivered to dock 4\"},{\"at\":\"2026-08-17T09:22:20.826Z\",\"atMs\":1786958540826,\"bytes\":409600,\"filename\":\"upload.png\",\"id\":2,\"notes\":\"Delivered to dock 4\"}]",
+        "actual": "[{\"at\":\"2026-08-17T09:28:56.071Z\",\"atMs\":1786958936071,\"bytes\":409600,\"filename\":\"upload.png\",\"id\":1,\"notes\":\"Delivered to dock 4\"},{\"at\":\"2026-08-17T09:28:56.072Z\",\"atMs\":1786958936072,\"bytes\":409600,\"filename\":\"upload.png\",\"id\":2,\"notes\":\"Delivered to dock 4\"}]",
         "detail": "expected count 1, got 2",
         "attempts": 9
       }
@@ -311,5 +311,5 @@
     "reverseDiscrepancy": false,
     "passedWithObservations": false
   },
-  "finishedAt": "2026-08-17T09:22:27.324Z"
+  "finishedAt": "2026-08-17T09:29:02.597Z"
 }
