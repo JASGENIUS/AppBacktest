@@ -1,7 +1,11 @@
 node_modules/
 dist/
 .env
-.backtests/runs/
-.backtests/reports/
+# Generated evidence. regressions/ is deliberately NOT ignored — the promoted
+# failure library is meant to be committed and reviewed like source.
+# Note the ** prefix: a pattern with an interior slash is anchored to this
+# file's directory, so plain `.backtests/runs/` would miss examples/*/.backtests.
+**/.backtests/runs/
+**/.backtests/reports/
 *.tsbuildinfo
 examples/**/node_modules/
