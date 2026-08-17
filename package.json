@@ -4,6 +4,14 @@
   "description": "Backtesting for applications: AI-simulated users pursue goals through your real UI, deterministic code verifies what actually happened, and every discovered failure becomes a replayable regression.",
   "license": "Apache-2.0",
   "author": "Jasroop Sangha",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JASGENIUS/AppBacktest.git"
+  },
+  "homepage": "https://github.com/JASGENIUS/AppBacktest#readme",
+  "bugs": {
+    "url": "https://github.com/JASGENIUS/AppBacktest/issues"
+  },
   "bin": {
     "appbacktest": "dist/cli/index.js"
   },

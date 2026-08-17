@@ -35,8 +35,7 @@ It double-clicks when it's impatient. And when it proudly reports success,
     keep it:  npx appbacktest promote pod_upload-3fe9d0eb-20260814003743
 ```
 
-One user action created two POD records. The app said "Upload received." The
-simulated user believed it. The state check caught it. That gap — between
+One user action created two POD records. The app said "Upload received." The probe believed it. The state check caught it. That gap — between
 what the UI claims, what the user believes, and what actually happened — is
 where the interesting bugs live, and it's exactly what scripted E2E tests
 cannot see.
@@ -62,15 +61,15 @@ regressions.
 ## Quickstart (zero API keys)
 
 ```bash
-git clone https://github.com/jasroopsangha/appbacktest
-cd appbacktest && npm install
+git clone https://github.com/JASGENIUS/AppBacktest
+cd AppBacktest && npm install
 npx playwright install chromium   # ~130MB, one time
 npm run demo                      # ← the full loop, deterministic, no keys
 ```
 
 `npm run demo` backtests the bundled PODHaul app (which ships with a planted
 double-submit bug) using the **fixture provider** — recorded decisions, so it
-runs identically on every machine. Three simulated drivers upload a POD;
+runs identically on every machine. Three probes upload a POD;
 seeded persona perturbations decide which of them double-clicks. Then close
 the loop:
 
