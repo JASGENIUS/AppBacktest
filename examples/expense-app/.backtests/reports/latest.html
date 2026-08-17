@@ -32,7 +32,7 @@
   .none{color:#8b95a7;padding:16px;border:1px dashed #222836;border-radius:6px}
 </style></head><body><div class="page">
   <h1>AppBacktest · Cove Expenses</h1>
-  <div class="muted">seed 555001 · config d4d6a65ad53f · 2026-08-15T05:29:01.617Z</div>
+  <div class="muted">seed 555001 · config d4d6a65ad53f · 2026-08-17T08:47:33.559Z</div>
   <div class="summary">
     <div class="stat"><b>2</b><span class="muted">runs</span></div>
     <div class="stat"><b>20</b><span class="muted">actions</span></div>
@@ -45,7 +45,7 @@
         <h3>Application reported success but state disagrees (submit_expense)</h3>
         <span class="id">#2f23a506e818</span>
       </div>
-      <div class="meta">confidence 98% · reproduced 2 / 2 attempts · failure at 00:03.463</div>
+      <div class="meta">confidence 98% · reproduced 2 / 2 attempts · failure at 00:03.643</div>
       <p><b>Observed:</b> The simulated user completed the workflow and believed it succeeded (“Submitted the client lunch expense as Meals with the note attached.”), but verification of the application's own state failed.</p>
       <p><b>Expected:</b> What the interface reports and what the application stores should agree.</p>
       
@@ -54,7 +54,7 @@
       <div class="ev"><b>Relevant events</b><ul><li>/api/expenses (2.category) — expected &quot;meals&quot;, got &quot;\&quot;uncategorized\&quot;&quot;</li></ul></div>
       <div class="ev"><b>Possible code location</b><ul><li><code>server.js:48</code> — handles the endpoint seen failing at runtime (/api/expenses)<div class="snip">app.get(&quot;/api/expenses&quot;, (_req, res) =&gt; res.json(state.expenses));</div></li><li><code>public/form.js:62</code> — handles the endpoint seen failing at runtime (/api/expenses)<div class="snip">const res = await fetch(&quot;/api/expenses&quot;, {</div></li></ul></div>
       <div class="acts">
-        <a class="btn" href="../runs/submit_expense-fb2fc6e7-20260814212843/replay.html#t=3463">Open Replay</a>
+        <a class="btn" href="../runs/submit_expense-fb2fc6e7-20260817004715/replay.html#t=3643">Open Replay</a>
         <span class="occ">2 occurrences</span>
         <span class="nomod">Source code modified: no</span>
       </div>
@@ -64,7 +64,7 @@
         <h3>Saved content is hard to find afterwards</h3>
         <span class="id">#dc915d355ada</span>
       </div>
-      <div class="meta">confidence 80% · reproduced 2 / 2 attempts · failure at 00:01.914</div>
+      <div class="meta">confidence 80% · reproduced 2 / 2 attempts · failure at 00:02.092</div>
       <p><b>Observed:</b> The simulated user entered “Client lunch with Acme” and the application confirmed it with “Expense submitted”. Continuing to use the application, that content was not visible on any screen the user reached afterwards.</p>
       
       <p><b>User impact:</b> Users may be unsure whether their input was really saved, or where to go to see it again.</p>
@@ -73,7 +73,7 @@
       <div class="ev"><b>Relevant events</b><ul><li>app confirmed: “Expense submitted”</li><li>entered content: “Client lunch with Acme”</li></ul></div>
       <div class="ev"><b>Possible code location</b><ul><li><code>public/form.js:68</code> — label of the control involved in the finding<div class="snip">showToast(&quot;Expense submitted&quot;);</div></li></ul></div>
       <div class="acts">
-        <a class="btn" href="../runs/submit_expense-fb2fc6e7-20260814212843/replay.html#t=1914">Open Replay</a>
+        <a class="btn" href="../runs/submit_expense-fb2fc6e7-20260817004715/replay.html#t=2092">Open Replay</a>
         <span class="occ">2 occurrences</span>
         <span class="nomod">Source code modified: no</span>
       </div>

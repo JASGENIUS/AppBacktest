@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Replay · concurrent_triage · concurrent_triage-b72829c9-20260817004738</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#0d1017;color:#e6e9ef;font:14px/1.5 "Segoe UI",system-ui,sans-serif}
+  header{padding:12px 18px;border-bottom:1px solid #222836;display:flex;gap:16px;align-items:baseline;flex-wrap:wrap}
+  h1{font-size:15px;margin:0;font-weight:600}
+  .muted{color:#8b95a7;font-size:12px}
+  .verdict{font-weight:700;color:#f87171}
+  .wrap{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:0;height:calc(100vh - 58px)}
+  .stage{padding:16px;overflow:auto;background:#0a0d13;display:flex;flex-direction:column;gap:12px}
+  .shot{width:100%;border:1px solid #222836;background:#fff;border-radius:4px}
+  .shot-empty{padding:40px;text-align:center;color:#5c6678;border:1px dashed #222836;border-radius:4px}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  button{font:inherit;background:#1a2130;color:#e6e9ef;border:1px solid #2b3446;padding:6px 12px;border-radius:4px;cursor:pointer}
+  button:hover{background:#222b3d}
+  .now{font-variant-numeric:tabular-nums;color:#7dd3fc;font-weight:600}
+  .side{border-left:1px solid #222836;overflow:auto;padding:10px 0}
+  .row{padding:7px 14px;border-left:3px solid transparent;cursor:pointer;display:grid;grid-template-columns:62px 1fr;gap:10px;align-items:baseline}
+  .row:hover{background:#141a25}
+  .row.active{background:#18202e;border-left-color:#7dd3fc}
+  .row.finding{border-left-color:#f472b6;background:#1d1420}
+  .t{font-variant-numeric:tabular-nums;color:#6b7688;font-size:12px}
+  .label{word-break:break-word}
+  .detail{color:#8b95a7;font-size:12px;margin-top:2px;word-break:break-word}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:middle}
+  .findings{padding:10px 18px;border-bottom:1px solid #222836;background:#141019}
+  .fpill{display:inline-block;margin:3px 6px 3px 0;padding:4px 10px;border:1px solid #4a2c3d;border-radius:99px;background:#231624;color:#f9a8d4;cursor:pointer;font-size:12px}
+</style></head><body>
+<header>
+  <h1>concurrent_triage</h1>
+  <span class="muted">persona agent · seed 606060 · 22 steps</span>
+  <span class="verdict">FAIL (assertion)</span>
+  <span class="muted" style="color:#f87171">⚠ discrepancy: the app reported success, state disagreed</span>
+</header>
+<div class="findings"><span class="muted">jump to finding:</span> <span class="fpill" data-at="9406">Application reported success but state disagrees (concurrent_triage) · 00:09.406</span><span class="fpill" data-at="7888">Saved content is hard to find afterwards · 00:07.888</span></div>
+<div class="wrap">
+  <div class="stage">
+    <div class="controls">
+      <button id="prev">‹ prev</button>
+      <button id="play">▶ play</button>
+      <button id="next">next ›</button>
+      <span class="now" id="now">00:00.000</span>
+      <span class="muted" id="what"></span>
+    </div>
+    <div id="shotbox"></div>
+  </div>
+  <div class="side" id="side"></div>
+</div>
+<script>
+const DATA = {"entries":[{"atMs":1297,"kind":"action","stepIndex":0,"label":"ben: typed “ben@meridian.test” into “Work email”","screenshot":"steps/000.png","severity":"info","shot":"steps/000.png"},{"atMs":1389,"kind":"action","stepIndex":1,"label":"ana: typed “ana@meridian.test” into “Work email”","screenshot":"steps/001.png","severity":"info","shot":"steps/001.png"},{"atMs":1460,"kind":"action","stepIndex":2,"label":"ana: typed “[redacted]” into “Password”","screenshot":"steps/002.png","severity":"info","shot":"steps/002.png"},{"atMs":1514,"kind":"action","stepIndex":3,"label":"ben: typed “[redacted]” into “Password”","screenshot":"steps/003.png","severity":"info","shot":"steps/003.png"},{"atMs":1559,"kind":"action","stepIndex":4,"label":"ben: clicked “Sign in”","screenshot":"steps/004.png","severity":"info","shot":"steps/004.png"},{"atMs":1941,"kind":"action","stepIndex":5,"label":"ben: waited 700ms","screenshot":"steps/005.png","severity":"info","shot":"steps/005.png"},{"atMs":2702,"kind":"action","stepIndex":6,"label":"ben: navigated to /tickets/1027","screenshot":"steps/006.png","severity":"info","shot":"steps/006.png"},{"atMs":2787,"kind":"action","stepIndex":7,"label":"ana: clicked “Sign in”","screenshot":"steps/007.png","severity":"info","shot":"steps/007.png"},{"atMs":3176,"kind":"action","stepIndex":8,"label":"ben: waited 700ms","screenshot":"steps/008.png","severity":"info","shot":"steps/008.png"},{"atMs":3961,"kind":"action","stepIndex":9,"label":"ana: waited 700ms","screenshot":"steps/009.png","severity":"info","shot":"steps/009.png"},{"atMs":4778,"kind":"action","stepIndex":10,"label":"ben: typed “ben” into “Assign to”","screenshot":"steps/010.png","severity":"info","shot":"steps/010.png"},{"atMs":5164,"kind":"action","stepIndex":11,"label":"ana: navigated to /tickets/1027","screenshot":"steps/011.png","severity":"info","shot":"steps/011.png"},{"atMs":5292,"kind":"action","stepIndex":12,"label":"ben: typed “urgent” into “Add a tag”","screenshot":"steps/012.png","severity":"info","shot":"steps/012.png"},{"atMs":5357,"kind":"action","stepIndex":13,"label":"ana: waited 700ms","screenshot":"steps/013.png","severity":"info","shot":"steps/013.png"},{"atMs":6149,"kind":"action","stepIndex":14,"label":"ben: clicked “Save triage”","screenshot":"steps/014.png","severity":"info","shot":"steps/014.png"},{"atMs":6434,"kind":"transient","stepIndex":14,"label":"app showed: “Triage saved”","severity":"info","shot":"steps/014.png"},{"atMs":6590,"kind":"action","stepIndex":15,"label":"ana: typed “ana” into “Assign to”","screenshot":"steps/015.png","severity":"info","shot":"steps/015.png"},{"atMs":6702,"kind":"action","stepIndex":16,"label":"ana: typed “billing” into “Add a tag”","screenshot":"steps/016.png","severity":"info","shot":"steps/016.png"},{"atMs":6843,"kind":"action","stepIndex":17,"label":"ben: waited 900ms","screenshot":"steps/017.png","severity":"info","shot":"steps/017.png"},{"atMs":7829,"kind":"action","stepIndex":18,"label":"ben: finished — believed success: Assigned #1027 to ben and tagged it urgent. The page confirmed the triage was saved.","screenshot":"steps/018.png","severity":"info","shot":"steps/018.png"},{"atMs":7888,"kind":"action","stepIndex":19,"label":"ana: clicked “Save triage”","screenshot":"steps/019.png","severity":"info","shot":"steps/019.png"},{"atMs":8266,"kind":"transient","stepIndex":19,"label":"app showed: “Triage saved”","severity":"info","shot":"steps/019.png"},{"atMs":8450,"kind":"action","stepIndex":20,"label":"ana: waited 900ms","screenshot":"steps/020.png","severity":"info","shot":"steps/020.png"},{"atMs":9406,"kind":"action","stepIndex":21,"label":"ana: finished — believed success: Assigned #1027 to ana and tagged it billing. The page confirmed the triage was saved.","screenshot":"steps/021.png","severity":"info","shot":"steps/021.png"}],"markers":[{"id":"db9b86c7fa62","title":"Application reported success but state disagrees (concurrent_triage)","atMs":9406,"severity":"critical"},{"id":"dc915d355ada","title":"Saved content is hard to find afterwards","atMs":7888,"severity":"medium"}]};
+const KIND_COLOR = {"action":"#7dd3fc","network":"#fca5a5","console":"#fdba74","transient":"#86efac","dialog":"#c4b5fd","error":"#f87171","navigation":"#94a3b8","finding":"#f472b6"};
+const side = document.getElementById("side");
+const shotbox = document.getElementById("shotbox");
+const nowEl = document.getElementById("now");
+const whatEl = document.getElementById("what");
+let index = 0, timer = null;
+
+function fmt(ms){const s=Math.max(0,Math.round(ms));const m=Math.floor(s/60000);const sec=Math.floor((s%60000)/1000);
+  return String(m).padStart(2,"0")+":"+String(sec).padStart(2,"0")+"."+String(s%1000).padStart(3,"0");}
+
+DATA.entries.forEach((e,i)=>{
+  const row=document.createElement("div");
+  row.className="row"+(e.kind==="finding"?" finding":"");
+  row.dataset.i=i;
+  const color=KIND_COLOR[e.kind]||"#8b95a7";
+  row.innerHTML='<div class="t">'+fmt(e.atMs)+'</div><div><div class="label">'+
+    '<span class="dot" style="background:'+color+'"></span>'+
+    e.label.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))+'</div>'+
+    (e.detail?'<div class="detail">'+e.detail.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))+'</div>':'')+'</div>';
+  row.addEventListener("click",()=>show(i));
+  side.appendChild(row);
+});
+
+function show(i){
+  index=Math.max(0,Math.min(i,DATA.entries.length-1));
+  const e=DATA.entries[index];
+  nowEl.textContent=fmt(e.atMs);
+  whatEl.textContent=e.label;
+  shotbox.innerHTML = e.shot
+    ? '<img class="shot" src="'+e.shot+'" alt="screen at '+fmt(e.atMs)+'">'
+    : '<div class="shot-empty">no screenshot captured at this moment</div>';
+  [...side.children].forEach((r,j)=>r.classList.toggle("active",j===index));
+  const active=side.children[index];
+  if(active) active.scrollIntoView({block:"nearest"});
+}
+function seekTo(ms){
+  let best=0;
+  DATA.entries.forEach((e,i)=>{ if(e.atMs<=ms) best=i; });
+  show(best);
+}
+document.getElementById("prev").onclick=()=>show(index-1);
+document.getElementById("next").onclick=()=>show(index+1);
+document.getElementById("play").onclick=function(){
+  if(timer){clearInterval(timer);timer=null;this.textContent="▶ play";return;}
+  this.textContent="⏸ pause";
+  timer=setInterval(()=>{ if(index>=DATA.entries.length-1){clearInterval(timer);timer=null;
+    document.getElementById("play").textContent="▶ play";return;} show(index+1); },900);
+};
+document.querySelectorAll(".fpill").forEach(p=>p.addEventListener("click",()=>seekTo(Number(p.dataset.at))));
+addEventListener("keydown",e=>{ if(e.key==="ArrowRight")show(index+1); if(e.key==="ArrowLeft")show(index-1); });
+if(location.hash.startsWith("#t=")) seekTo(Number(location.hash.slice(3))); else show(0);
+</script></body></html>
