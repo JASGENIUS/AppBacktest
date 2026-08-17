@@ -19,9 +19,16 @@ jobs:
       - run: npm run build
       - run: npx vitest run
 
-      # Integration proof: the zero-key demo must DISCOVER the planted bug.
-      # Seed 555001 deterministically double-clicks the upload in runs 1 and 2,
-      # so the expected exit code is exactly 2 (two failed runs).
+      # The real gate: every user-facing feature, end to end, against the
+      # bundled example apps. Deterministic and offline — the fixture provider
+      # means CI needs no API key and costs nothing.
+      - name: verify every feature end to end
+        run: node scripts/verify-features.mjs
+
+      # Belt and braces: the demo must still DISCOVER the planted bug. Seed
+      # 555001 deterministically double-clicks the upload in runs 1 and 2, so
+      # the expected exit code is exactly 2 (two discovered failures). A zero
+      # here would mean detection silently broke.
       - name: demo discovers the planted bug
         run: |
           set +e

@@ -1,0 +1,103 @@
+{
+  "formatVersion": 1,
+  "appbacktestVersion": "0.1.0",
+  "app": {
+    "name": "Cove Expenses",
+    "url": "http://localhost:4174"
+  },
+  "seed": "918273",
+  "configHash": "6db20f2ecb67ded11efee17b1f2ff2c3fec2ed5940a8ae0207494b86b6d33082",
+  "checksByScenario": {
+    "submit_expense": [
+      {
+        "type": "transient",
+        "contains": "Expense submitted"
+      },
+      {
+        "type": "http",
+        "url": "/api/expenses",
+        "count": 3
+      },
+      {
+        "type": "http",
+        "url": "/api/expenses",
+        "path": "2.category",
+        "equals": "meals"
+      }
+    ]
+  },
+  "startedAt": "2026-08-14T22:43:38.701Z",
+  "finishedAt": "2026-08-14T22:48:32.405Z",
+  "runs": [
+    {
+      "runId": "submit_expense-edcdf5f7-20260814144338",
+      "scenarioKey": "submit_expense",
+      "personaKey": "employee",
+      "subSeed": "918273:submit_expense:0",
+      "verdict": "FAIL",
+      "ending": "done",
+      "discrepancy": true,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 11,
+      "durationMs": 48759,
+      "observationCounts": {
+        "action_error": 1
+      },
+      "runDir": "runs/submit_expense-edcdf5f7-20260814144338",
+      "failureKind": "assertion"
+    },
+    {
+      "runId": "submit_expense-658e2e4c-20260814144338",
+      "scenarioKey": "submit_expense",
+      "personaKey": "employee",
+      "subSeed": "918273:submit_expense:1",
+      "verdict": "FAIL",
+      "ending": "gave_up",
+      "discrepancy": false,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 13,
+      "durationMs": 119416,
+      "observationCounts": {
+        "action_error": 1,
+        "dialog_auto_handled": 1,
+        "gave_up": 1
+      },
+      "runDir": "runs/submit_expense-658e2e4c-20260814144338",
+      "failureKind": "check_error"
+    },
+    {
+      "runId": "submit_expense-e6d13692-20260814144338",
+      "scenarioKey": "submit_expense",
+      "personaKey": "employee",
+      "subSeed": "918273:submit_expense:2",
+      "verdict": "FAIL",
+      "ending": "done",
+      "discrepancy": true,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 19,
+      "durationMs": 124783,
+      "observationCounts": {
+        "action_error": 1,
+        "dialog_auto_handled": 1
+      },
+      "runDir": "runs/submit_expense-e6d13692-20260814144338",
+      "failureKind": "assertion"
+    }
+  ],
+  "totals": {
+    "total": 3,
+    "passed": 0,
+    "failed": 3,
+    "setupFailed": 0,
+    "discrepancies": 2,
+    "reverseDiscrepancies": 0,
+    "passedWithObservations": 0,
+    "byFailureKind": {
+      "assertion": 2,
+      "check_error": 1
+    }
+  }
+}

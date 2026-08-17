@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .env
-.backtests/
+.backtests/runs/
+.backtests/reports/
 *.tsbuildinfo
 examples/**/node_modules/

@@ -1,0 +1,88 @@
+{
+  "formatVersion": 1,
+  "appbacktestVersion": "0.1.0",
+  "app": {
+    "name": "Meridian Support",
+    "url": "http://localhost:4175"
+  },
+  "seed": "313373",
+  "configHash": "0212c6b869eff2c17cfd857447f844b4eb0a3f409b3f806de32a01f5a12e5cd0",
+  "checksByScenario": {
+    "escalate_ticket": [
+      {
+        "type": "url",
+        "contains": "/tickets/1027"
+      },
+      {
+        "type": "transient",
+        "contains": "escalated"
+      },
+      {
+        "type": "http",
+        "url": "/api/state",
+        "path": "tickets.26.escalations",
+        "equals": 1
+      },
+      {
+        "type": "http",
+        "url": "/api/tickets/1027",
+        "path": "status",
+        "equals": "escalated"
+      }
+    ]
+  },
+  "startedAt": "2026-08-15T05:02:17.783Z",
+  "finishedAt": "2026-08-15T05:02:35.909Z",
+  "runs": [
+    {
+      "runId": "escalate_ticket-4a7cb116-20260814210217",
+      "scenarioKey": "escalate_ticket",
+      "personaKey": "support_lead",
+      "subSeed": "313373:escalate_ticket:0",
+      "verdict": "PASS",
+      "ending": "done",
+      "discrepancy": false,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 18,
+      "durationMs": 8607,
+      "observationCounts": {},
+      "runDir": "runs/escalate_ticket-4a7cb116-20260814210217"
+    },
+    {
+      "runId": "escalate_ticket-7dfe2579-20260814210217",
+      "scenarioKey": "escalate_ticket",
+      "personaKey": "support_lead",
+      "subSeed": "313373:escalate_ticket:1",
+      "verdict": "PASS",
+      "ending": "done",
+      "discrepancy": false,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 18,
+      "durationMs": 8709,
+      "observationCounts": {},
+      "runDir": "runs/escalate_ticket-7dfe2579-20260814210217"
+    }
+  ],
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "setupFailed": 0,
+    "discrepancies": 0,
+    "reverseDiscrepancies": 0,
+    "passedWithObservations": 0,
+    "byFailureKind": {},
+    "actions": 36
+  },
+  "findings": [],
+  "findingCounts": {
+    "critical_failure": 0,
+    "functional_bug": 0,
+    "visual_bug": 0,
+    "performance": 0,
+    "usability": 0,
+    "qol_recommendation": 0
+  }
+}

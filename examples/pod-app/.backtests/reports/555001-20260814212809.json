@@ -1,0 +1,282 @@
+{
+  "formatVersion": 1,
+  "appbacktestVersion": "0.1.0",
+  "app": {
+    "name": "POD Demo",
+    "url": "http://localhost:4173"
+  },
+  "seed": "555001",
+  "configHash": "8b0b5102618370165146e29bcf3dee9911b25281b986b7cb22da945051a6ae7c",
+  "checksByScenario": {
+    "pod_upload": [
+      {
+        "type": "url",
+        "contains": "/loads/"
+      },
+      {
+        "type": "transient",
+        "contains": "Upload received"
+      },
+      {
+        "type": "http",
+        "url": "/api/loads/38419/pods",
+        "count": 1
+      }
+    ]
+  },
+  "startedAt": "2026-08-15T05:27:46.828Z",
+  "finishedAt": "2026-08-15T05:28:09.258Z",
+  "runs": [
+    {
+      "runId": "pod_upload-40c629d3-20260814212746",
+      "scenarioKey": "pod_upload",
+      "personaKey": "driver",
+      "subSeed": "555001:pod_upload:0",
+      "verdict": "PASS",
+      "ending": "done",
+      "discrepancy": false,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 6,
+      "durationMs": 4626,
+      "observationCounts": {},
+      "runDir": "runs/pod_upload-40c629d3-20260814212746"
+    },
+    {
+      "runId": "pod_upload-3fe9d0eb-20260814212746",
+      "scenarioKey": "pod_upload",
+      "personaKey": "driver",
+      "subSeed": "555001:pod_upload:1",
+      "verdict": "FAIL",
+      "ending": "done",
+      "discrepancy": true,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 6,
+      "durationMs": 8397,
+      "observationCounts": {},
+      "runDir": "runs/pod_upload-3fe9d0eb-20260814212746",
+      "failureKind": "assertion"
+    },
+    {
+      "runId": "pod_upload-f0987f10-20260814212746",
+      "scenarioKey": "pod_upload",
+      "personaKey": "driver",
+      "subSeed": "555001:pod_upload:2",
+      "verdict": "FAIL",
+      "ending": "done",
+      "discrepancy": true,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 6,
+      "durationMs": 8489,
+      "observationCounts": {},
+      "runDir": "runs/pod_upload-f0987f10-20260814212746",
+      "failureKind": "assertion"
+    }
+  ],
+  "totals": {
+    "total": 3,
+    "passed": 1,
+    "failed": 2,
+    "setupFailed": 0,
+    "discrepancies": 2,
+    "reverseDiscrepancies": 0,
+    "passedWithObservations": 0,
+    "byFailureKind": {
+      "assertion": 2
+    },
+    "actions": 18
+  },
+  "findings": [
+    {
+      "id": "08ce819c621f",
+      "category": "critical_failure",
+      "severity": "critical",
+      "confidence": 0.98,
+      "title": "Application reported success but state disagrees (pod_upload)",
+      "observed": "The simulated user completed the workflow and believed it succeeded (“Uploaded the POD photo and saw the confirmation message.”), but verification of the application's own state failed.",
+      "expected": "What the interface reports and what the application stores should agree.",
+      "reproduction": [
+        "Click “Load #38419 — Chicago, IL → Detroit, MI (in transit)”",
+        "Attach a file “Choose photo”",
+        "Type “Delivered to dock 4” into “Delivery notes”",
+        "Click “Upload POD”"
+      ],
+      "evidence": [
+        "/api/loads/38419/pods — expected count 1, got \"[{\\\"at\\\":\\\"2026-08-15T05:27:53.457Z\\\",\\\"atMs\\\":1786771673457,\\\"bytes\\\":409600,\\\"filename\\\":\\\"upload.png\\\",\\\"id\\\":1,\\\"no"
+      ],
+      "occurrences": [
+        {
+          "runId": "pod_upload-3fe9d0eb-20260814212746",
+          "runDir": "runs/pod_upload-3fe9d0eb-20260814212746",
+          "scenarioKey": "pod_upload",
+          "personaKey": "driver",
+          "atMs": 3019,
+          "clip": {
+            "runId": "pod_upload-3fe9d0eb-20260814212746",
+            "runDir": "runs/pod_upload-3fe9d0eb-20260814212746",
+            "startMs": 0,
+            "focusMs": 3019,
+            "endMs": 13019,
+            "entries": [
+              {
+                "atMs": 447,
+                "kind": "action",
+                "stepIndex": 0,
+                "label": "clicked “Load #38419 — Chicago, IL → Detroit, MI (in transit)”",
+                "screenshot": "steps/000.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 569,
+                "kind": "action",
+                "stepIndex": 1,
+                "label": "attached a file “Choose photo”",
+                "screenshot": "steps/001.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1061,
+                "kind": "action",
+                "stepIndex": 2,
+                "label": "typed “Delivered to dock 4” into “Delivery notes”",
+                "screenshot": "steps/002.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1061,
+                "kind": "transient",
+                "stepIndex": 1,
+                "label": "app showed: “file chosen: upload.png”",
+                "severity": "info"
+              },
+              {
+                "atMs": 1108,
+                "kind": "action",
+                "stepIndex": 3,
+                "label": "clicked “Upload POD”",
+                "screenshot": "steps/003.png",
+                "detail": "perturbation: double_click",
+                "severity": "info"
+              },
+              {
+                "atMs": 1467,
+                "kind": "action",
+                "stepIndex": 4,
+                "label": "waited 1500ms",
+                "screenshot": "steps/004.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1870,
+                "kind": "transient",
+                "stepIndex": 4,
+                "label": "app showed: “Upload received”",
+                "severity": "info"
+              },
+              {
+                "atMs": 3019,
+                "kind": "action",
+                "stepIndex": 5,
+                "label": "finished — believed success: Uploaded the POD photo and saw the confirmation message.",
+                "screenshot": "steps/005.png",
+                "severity": "info"
+              }
+            ]
+          }
+        },
+        {
+          "runId": "pod_upload-f0987f10-20260814212746",
+          "runDir": "runs/pod_upload-f0987f10-20260814212746",
+          "scenarioKey": "pod_upload",
+          "personaKey": "driver",
+          "atMs": 3126,
+          "clip": {
+            "runId": "pod_upload-f0987f10-20260814212746",
+            "runDir": "runs/pod_upload-f0987f10-20260814212746",
+            "startMs": 0,
+            "focusMs": 3126,
+            "endMs": 13126,
+            "entries": [
+              {
+                "atMs": 550,
+                "kind": "action",
+                "stepIndex": 0,
+                "label": "clicked “Load #38419 — Chicago, IL → Detroit, MI (in transit)”",
+                "screenshot": "steps/000.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 676,
+                "kind": "action",
+                "stepIndex": 1,
+                "label": "attached a file “Choose photo”",
+                "screenshot": "steps/001.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1178,
+                "kind": "action",
+                "stepIndex": 2,
+                "label": "typed “Delivered to dock 4” into “Delivery notes”",
+                "screenshot": "steps/002.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1178,
+                "kind": "transient",
+                "stepIndex": 1,
+                "label": "app showed: “file chosen: upload.png”",
+                "severity": "info"
+              },
+              {
+                "atMs": 1225,
+                "kind": "action",
+                "stepIndex": 3,
+                "label": "clicked “Upload POD”",
+                "screenshot": "steps/003.png",
+                "detail": "perturbation: double_click",
+                "severity": "info"
+              },
+              {
+                "atMs": 1583,
+                "kind": "action",
+                "stepIndex": 4,
+                "label": "waited 1500ms",
+                "screenshot": "steps/004.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1977,
+                "kind": "transient",
+                "stepIndex": 4,
+                "label": "app showed: “Upload received”",
+                "severity": "info"
+              },
+              {
+                "atMs": 3126,
+                "kind": "action",
+                "stepIndex": 5,
+                "label": "finished — believed success: Uploaded the POD photo and saw the confirmation message.",
+                "screenshot": "steps/005.png",
+                "severity": "info"
+              }
+            ]
+          }
+        }
+      ],
+      "reproducedIn": "2 / 3 attempts",
+      "codeRefs": [],
+      "sourceModified": false
+    }
+  ],
+  "findingCounts": {
+    "critical_failure": 1,
+    "functional_bug": 0,
+    "visual_bug": 0,
+    "performance": 0,
+    "usability": 0,
+    "qol_recommendation": 0
+  }
+}

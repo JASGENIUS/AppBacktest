@@ -1,0 +1,392 @@
+{
+  "formatVersion": 1,
+  "appbacktestVersion": "0.1.0",
+  "app": {
+    "name": "Cove Expenses",
+    "url": "http://localhost:4174"
+  },
+  "seed": "555001",
+  "configHash": "a49d568c0e12af9fef440f32a356cb2568e8d4099db82a2533231fb31fc59627",
+  "checksByScenario": {
+    "submit_expense": [
+      {
+        "type": "transient",
+        "contains": "Expense submitted"
+      },
+      {
+        "type": "http",
+        "url": "/api/expenses",
+        "count": 3
+      },
+      {
+        "type": "http",
+        "url": "/api/expenses",
+        "path": "2.category",
+        "equals": "meals"
+      }
+    ],
+    "submit_expense_methodical": [
+      {
+        "type": "transient",
+        "contains": "Expense submitted"
+      },
+      {
+        "type": "http",
+        "url": "/api/expenses",
+        "count": 3
+      },
+      {
+        "type": "http",
+        "url": "/api/expenses",
+        "path": "2.category",
+        "equals": "meals"
+      }
+    ]
+  },
+  "startedAt": "2026-08-15T00:32:09.424Z",
+  "finishedAt": "2026-08-15T00:49:27.239Z",
+  "runs": [
+    {
+      "runId": "submit_expense-fb2fc6e7-20260814163208",
+      "scenarioKey": "submit_expense",
+      "personaKey": "employee",
+      "subSeed": "555001:submit_expense:0",
+      "verdict": "FAIL",
+      "ending": "max_steps",
+      "discrepancy": false,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 20,
+      "durationMs": 216651,
+      "observationCounts": {
+        "action_error": 1,
+        "max_steps": 1
+      },
+      "runDir": "runs/submit_expense-fb2fc6e7-20260814163208",
+      "failureKind": "assertion"
+    },
+    {
+      "runId": "submit_expense-7c069b9a-20260814163208",
+      "scenarioKey": "submit_expense",
+      "personaKey": "employee",
+      "subSeed": "555001:submit_expense:1",
+      "verdict": "FAIL",
+      "ending": "gave_up",
+      "discrepancy": false,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 2,
+      "durationMs": 86080,
+      "observationCounts": {
+        "gave_up": 1
+      },
+      "runDir": "runs/submit_expense-7c069b9a-20260814163208",
+      "failureKind": "check_error"
+    },
+    {
+      "runId": "submit_expense_methodical-307e45ff-20260814163208",
+      "scenarioKey": "submit_expense_methodical",
+      "personaKey": "methodical",
+      "subSeed": "555001:submit_expense_methodical:0",
+      "verdict": "PASS",
+      "ending": "gave_up",
+      "discrepancy": false,
+      "reverseDiscrepancy": true,
+      "passedWithObservations": false,
+      "steps": 18,
+      "durationMs": 371773,
+      "observationCounts": {
+        "gave_up": 1
+      },
+      "runDir": "runs/submit_expense_methodical-307e45ff-20260814163208"
+    },
+    {
+      "runId": "submit_expense_methodical-c79db42a-20260814163208",
+      "scenarioKey": "submit_expense_methodical",
+      "personaKey": "methodical",
+      "subSeed": "555001:submit_expense_methodical:1",
+      "verdict": "FAIL",
+      "ending": "gave_up",
+      "discrepancy": false,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 13,
+      "durationMs": 361833,
+      "observationCounts": {
+        "gave_up": 1
+      },
+      "runDir": "runs/submit_expense_methodical-c79db42a-20260814163208",
+      "failureKind": "check_error"
+    }
+  ],
+  "totals": {
+    "total": 4,
+    "passed": 1,
+    "failed": 3,
+    "setupFailed": 0,
+    "discrepancies": 0,
+    "reverseDiscrepancies": 1,
+    "passedWithObservations": 0,
+    "byFailureKind": {
+      "assertion": 1,
+      "check_error": 2
+    },
+    "actions": 53
+  },
+  "findings": [
+    {
+      "id": "1e382651740d",
+      "category": "functional_bug",
+      "severity": "high",
+      "confidence": 0.85,
+      "title": "Workflow did not reach its expected outcome (submit_expense)",
+      "observed": "The workflow ran to completion but the application's state did not match what the workflow should have produced.",
+      "expected": "The workflow should leave the application in the expected state.",
+      "reproduction": [
+        "Click “New expense”",
+        "Click “Add note”",
+        "Type “Client lunch with Acme” into “Note”",
+        "Click “Save note”",
+        "Type “Client lunch” into “Description”",
+        "Type “48.20” into “Amount”",
+        "Select “meals” “Category”",
+        "Press Enter",
+        "Type “Client lunch with Acme”",
+        "Click “Add note”",
+        "Click “Save note”",
+        "Type “Client lunch with Acme” into “Description”",
+        "… 8 more actions"
+      ],
+      "evidence": [
+        "/api/expenses (2.category) — expected \"meals\", got \"\\\"uncategorized\\\"\""
+      ],
+      "occurrences": [
+        {
+          "runId": "submit_expense-fb2fc6e7-20260814163208",
+          "runDir": "runs/submit_expense-fb2fc6e7-20260814163208",
+          "scenarioKey": "submit_expense",
+          "personaKey": "employee",
+          "atMs": 169619,
+          "clip": {
+            "runId": "submit_expense-fb2fc6e7-20260814163208",
+            "runDir": "runs/submit_expense-fb2fc6e7-20260814163208",
+            "startMs": 149619,
+            "focusMs": 169619,
+            "endMs": 179619,
+            "entries": [
+              {
+                "atMs": 150664,
+                "kind": "action",
+                "stepIndex": 16,
+                "label": "clicked “Save note”",
+                "screenshot": "steps/016.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 155553,
+                "kind": "action",
+                "stepIndex": 17,
+                "label": "clicked “Add note”",
+                "screenshot": "steps/017.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 166391,
+                "kind": "action",
+                "stepIndex": 18,
+                "label": "clicked “Save note”",
+                "screenshot": "steps/018.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 169619,
+                "kind": "action",
+                "stepIndex": 19,
+                "label": "clicked “Submit expense”",
+                "screenshot": "steps/019.png",
+                "severity": "info"
+              }
+            ]
+          }
+        }
+      ],
+      "reproducedIn": "1 / 2 attempts",
+      "codeRefs": [
+        {
+          "path": "server.js",
+          "line": 48,
+          "snippet": "app.get(\"/api/expenses\", (_req, res) => res.json(state.expenses));",
+          "why": "handles the endpoint seen failing at runtime (/api/expenses)"
+        },
+        {
+          "path": "public/form.js",
+          "line": 62,
+          "snippet": "const res = await fetch(\"/api/expenses\", {",
+          "why": "handles the endpoint seen failing at runtime (/api/expenses)"
+        }
+      ],
+      "sourceModified": false
+    },
+    {
+      "id": "d033b9327729",
+      "category": "usability",
+      "severity": "medium",
+      "confidence": 0.8,
+      "title": "Workflow succeeded but the user could not tell",
+      "observed": "Every verification of the application's state passed, yet the simulated user ended the workflow believing it had not worked (“provider produced an invalid action twice: no JSON object found in model output: \"We need to submit expense with note \"C”).",
+      "userImpact": "Users may retry completed work, contact support, or abandon a task that actually succeeded.",
+      "suggestion": "Consider making the successful outcome unmistakable on screen at the point the user is looking.",
+      "reproduction": [],
+      "evidence": [
+        "all checks passed",
+        "user's own conclusion: gave_up"
+      ],
+      "occurrences": [
+        {
+          "runId": "submit_expense_methodical-307e45ff-20260814163208",
+          "runDir": "runs/submit_expense_methodical-307e45ff-20260814163208",
+          "scenarioKey": "submit_expense_methodical",
+          "personaKey": "methodical",
+          "atMs": 332666,
+          "clip": {
+            "runId": "submit_expense_methodical-307e45ff-20260814163208",
+            "runDir": "runs/submit_expense_methodical-307e45ff-20260814163208",
+            "startMs": 312666,
+            "focusMs": 332666,
+            "endMs": 342666,
+            "entries": [
+              {
+                "atMs": 324108,
+                "kind": "action",
+                "stepIndex": 16,
+                "label": "pressed Tab",
+                "screenshot": "steps/016.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 332666,
+                "kind": "action",
+                "stepIndex": 17,
+                "label": "gave up: provider produced an invalid action twice: no JSON object found in model output: \"We need ",
+                "screenshot": "steps/017.png",
+                "severity": "info"
+              }
+            ]
+          }
+        }
+      ],
+      "reproducedIn": "1 / 2 attempts",
+      "codeRefs": [],
+      "sourceModified": false
+    },
+    {
+      "id": "dc915d355ada",
+      "category": "usability",
+      "severity": "medium",
+      "confidence": 0.75,
+      "title": "Saved content is hard to find afterwards",
+      "observed": "The simulated user entered “Client lunch” and the application confirmed it with “Expense submitted”. Continuing to use the application, that content was not visible on any screen the user reached afterwards.",
+      "userImpact": "Users may be unsure whether their input was really saved, or where to go to see it again.",
+      "suggestion": "Consider showing the saved content on the screen it belongs to, or providing a clearly visible way to reach it.",
+      "reproduction": [],
+      "evidence": [
+        "app confirmed: “Expense submitted”",
+        "entered content: “Client lunch”"
+      ],
+      "occurrences": [
+        {
+          "runId": "submit_expense_methodical-307e45ff-20260814163208",
+          "runDir": "runs/submit_expense_methodical-307e45ff-20260814163208",
+          "scenarioKey": "submit_expense_methodical",
+          "personaKey": "methodical",
+          "atMs": 151281,
+          "clip": {
+            "runId": "submit_expense_methodical-307e45ff-20260814163208",
+            "runDir": "runs/submit_expense_methodical-307e45ff-20260814163208",
+            "startMs": 131281,
+            "focusMs": 151281,
+            "endMs": 161281,
+            "entries": [
+              {
+                "atMs": 151281,
+                "kind": "action",
+                "stepIndex": 10,
+                "label": "pressed Tab",
+                "screenshot": "steps/010.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 151344,
+                "kind": "transient",
+                "stepIndex": 10,
+                "label": "app showed: “Expense submitted”",
+                "severity": "info"
+              }
+            ]
+          }
+        }
+      ],
+      "reproducedIn": "1 / 2 attempts",
+      "codeRefs": [
+        {
+          "path": "public/form.js",
+          "line": 68,
+          "snippet": "showToast(\"Expense submitted\");",
+          "why": "label of the control involved in the finding"
+        }
+      ],
+      "sourceModified": false
+    },
+    {
+      "id": "60d6b62362f8",
+      "category": "usability",
+      "severity": "medium",
+      "confidence": 0.72,
+      "title": "No visible confirmation after “Submit expense”",
+      "observed": "The user clicked “Submit expense” and the action succeeded, but nothing on screen changed: no message appeared, no dialog opened, and the page stayed at http://localhost:4174/new.",
+      "userImpact": "Users cannot tell whether the action worked, and may repeat it or abandon the workflow.",
+      "suggestion": "Consider confirming the result of this action visibly, or reflecting it in the page.",
+      "reproduction": [],
+      "evidence": [
+        "clicked “Submit expense” with no message, dialog, or navigation"
+      ],
+      "occurrences": [
+        {
+          "runId": "submit_expense_methodical-307e45ff-20260814163208",
+          "runDir": "runs/submit_expense_methodical-307e45ff-20260814163208",
+          "scenarioKey": "submit_expense_methodical",
+          "personaKey": "methodical",
+          "atMs": 120608,
+          "clip": {
+            "runId": "submit_expense_methodical-307e45ff-20260814163208",
+            "runDir": "runs/submit_expense_methodical-307e45ff-20260814163208",
+            "startMs": 100608,
+            "focusMs": 120608,
+            "endMs": 130608,
+            "entries": [
+              {
+                "atMs": 120608,
+                "kind": "action",
+                "stepIndex": 9,
+                "label": "clicked “Submit expense”",
+                "screenshot": "steps/009.png",
+                "severity": "info"
+              }
+            ]
+          }
+        }
+      ],
+      "reproducedIn": "1 / 2 attempts",
+      "codeRefs": [],
+      "sourceModified": false
+    }
+  ],
+  "findingCounts": {
+    "critical_failure": 0,
+    "functional_bug": 1,
+    "visual_bug": 0,
+    "performance": 0,
+    "usability": 3,
+    "qol_recommendation": 0
+  }
+}

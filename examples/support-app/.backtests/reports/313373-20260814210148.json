@@ -1,0 +1,918 @@
+{
+  "formatVersion": 1,
+  "appbacktestVersion": "0.1.0",
+  "app": {
+    "name": "Meridian Support",
+    "url": "http://localhost:4175"
+  },
+  "seed": "313373",
+  "configHash": "0212c6b869eff2c17cfd857447f844b4eb0a3f409b3f806de32a01f5a12e5cd0",
+  "checksByScenario": {
+    "escalate_ticket": [
+      {
+        "type": "url",
+        "contains": "/tickets/1027"
+      },
+      {
+        "type": "transient",
+        "contains": "escalated"
+      },
+      {
+        "type": "http",
+        "url": "/api/state",
+        "path": "tickets.26.escalations",
+        "equals": 1
+      },
+      {
+        "type": "http",
+        "url": "/api/tickets/1027",
+        "path": "status",
+        "equals": "escalated"
+      }
+    ]
+  },
+  "startedAt": "2026-08-15T05:01:14.120Z",
+  "finishedAt": "2026-08-15T05:01:48.354Z",
+  "runs": [
+    {
+      "runId": "escalate_ticket-4a7cb116-20260814210113",
+      "scenarioKey": "escalate_ticket",
+      "personaKey": "support_lead",
+      "subSeed": "313373:escalate_ticket:0",
+      "verdict": "FAIL",
+      "ending": "done",
+      "discrepancy": true,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 18,
+      "durationMs": 16864,
+      "observationCounts": {
+        "console_error": 1,
+        "http_error": 1
+      },
+      "runDir": "runs/escalate_ticket-4a7cb116-20260814210113",
+      "failureKind": "assertion"
+    },
+    {
+      "runId": "escalate_ticket-7dfe2579-20260814210113",
+      "scenarioKey": "escalate_ticket",
+      "personaKey": "support_lead",
+      "subSeed": "313373:escalate_ticket:1",
+      "verdict": "FAIL",
+      "ending": "done",
+      "discrepancy": true,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 18,
+      "durationMs": 16805,
+      "observationCounts": {
+        "console_error": 1,
+        "http_error": 1
+      },
+      "runDir": "runs/escalate_ticket-7dfe2579-20260814210113",
+      "failureKind": "assertion"
+    }
+  ],
+  "totals": {
+    "total": 2,
+    "passed": 0,
+    "failed": 2,
+    "setupFailed": 0,
+    "discrepancies": 2,
+    "reverseDiscrepancies": 0,
+    "passedWithObservations": 0,
+    "byFailureKind": {
+      "assertion": 2
+    },
+    "actions": 36
+  },
+  "findings": [
+    {
+      "id": "776fc91eb716",
+      "category": "critical_failure",
+      "severity": "critical",
+      "confidence": 0.98,
+      "title": "Application reported success but state disagrees (escalate_ticket)",
+      "observed": "The simulated user completed the workflow and believed it succeeded (“Signed in, found ticket #1027, and escalated it as Sev 2 to payments-rota. The interface confirmed the escalation.”), but verification of the application's own state failed.",
+      "expected": "What the interface reports and what the application stores should agree.",
+      "reproduction": [
+        "Type “lead@meridian.test” into “Work email”",
+        "Type “[redacted]” into “Password”",
+        "Click “Sign in”",
+        "Type “payments dashboard” into “Search tickets”",
+        "Click “Search”",
+        "Click “Payments dashboard blank after login (#1027)”",
+        "Click “Escalate ticket”",
+        "Type “Customer blocked from billing” into “Why does this need escalating?”",
+        "Click “Next”",
+        "Select “sev2” “Severity”",
+        "Click “Next”",
+        "Type “payments-rota” into “On-call contact”",
+        "… 1 more actions"
+      ],
+      "evidence": [
+        "/api/state (tickets.26.escalations) — expected 1, got \"0\"",
+        "/api/tickets/1027 (status) — expected \"escalated\", got \"\\\"open\\\"\""
+      ],
+      "occurrences": [
+        {
+          "runId": "escalate_ticket-4a7cb116-20260814210113",
+          "runDir": "runs/escalate_ticket-4a7cb116-20260814210113",
+          "scenarioKey": "escalate_ticket",
+          "personaKey": "support_lead",
+          "atMs": 7408,
+          "clip": {
+            "runId": "escalate_ticket-4a7cb116-20260814210113",
+            "runDir": "runs/escalate_ticket-4a7cb116-20260814210113",
+            "startMs": 0,
+            "focusMs": 7408,
+            "endMs": 17408,
+            "entries": [
+              {
+                "atMs": 451,
+                "kind": "action",
+                "stepIndex": 0,
+                "label": "typed “lead@meridian.test” into “Work email”",
+                "screenshot": "steps/000.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 538,
+                "kind": "action",
+                "stepIndex": 1,
+                "label": "typed “[redacted]” into “Password”",
+                "screenshot": "steps/001.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 603,
+                "kind": "action",
+                "stepIndex": 2,
+                "label": "clicked “Sign in”",
+                "screenshot": "steps/002.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 992,
+                "kind": "action",
+                "stepIndex": 3,
+                "label": "waited 800ms",
+                "screenshot": "steps/003.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1845,
+                "kind": "action",
+                "stepIndex": 4,
+                "label": "typed “payments dashboard” into “Search tickets”",
+                "screenshot": "steps/004.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1907,
+                "kind": "action",
+                "stepIndex": 5,
+                "label": "clicked “Search”",
+                "screenshot": "steps/005.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 2281,
+                "kind": "action",
+                "stepIndex": 6,
+                "label": "waited 600ms",
+                "screenshot": "steps/006.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 2930,
+                "kind": "action",
+                "stepIndex": 7,
+                "label": "clicked “Payments dashboard blank after login (#1027)”",
+                "screenshot": "steps/007.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 3029,
+                "kind": "action",
+                "stepIndex": 8,
+                "label": "waited 600ms",
+                "screenshot": "steps/008.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 3691,
+                "kind": "action",
+                "stepIndex": 9,
+                "label": "clicked “Escalate ticket”",
+                "screenshot": "steps/009.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4065,
+                "kind": "action",
+                "stepIndex": 10,
+                "label": "typed “Customer blocked from billing” into “Why does this need escalating?”",
+                "screenshot": "steps/010.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4115,
+                "kind": "action",
+                "stepIndex": 11,
+                "label": "clicked “Next”",
+                "screenshot": "steps/011.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4493,
+                "kind": "action",
+                "stepIndex": 12,
+                "label": "selected “sev2” “Severity”",
+                "screenshot": "steps/012.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4535,
+                "kind": "action",
+                "stepIndex": 13,
+                "label": "clicked “Next”",
+                "screenshot": "steps/013.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4900,
+                "kind": "action",
+                "stepIndex": 14,
+                "label": "typed “payments-rota” into “On-call contact”",
+                "screenshot": "steps/014.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4952,
+                "kind": "action",
+                "stepIndex": 15,
+                "label": "clicked “Submit escalation”",
+                "screenshot": "steps/015.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 5037,
+                "kind": "transient",
+                "stepIndex": 15,
+                "label": "app showed: “Ticket escalated”",
+                "severity": "info"
+              },
+              {
+                "atMs": 5355,
+                "kind": "action",
+                "stepIndex": 16,
+                "label": "waited 2000ms",
+                "screenshot": "steps/016.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 5651,
+                "kind": "network",
+                "stepIndex": 16,
+                "label": "POST /api/tickets/1027/escalate → 500",
+                "severity": "error"
+              },
+              {
+                "atMs": 5652,
+                "kind": "console",
+                "stepIndex": 16,
+                "label": "console error",
+                "detail": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+                "severity": "error"
+              },
+              {
+                "atMs": 7408,
+                "kind": "action",
+                "stepIndex": 17,
+                "label": "finished — believed success: Signed in, found ticket #1027, and escalated it as Sev 2 to payments-rota. The interface c",
+                "screenshot": "steps/017.png",
+                "severity": "info"
+              }
+            ]
+          }
+        },
+        {
+          "runId": "escalate_ticket-7dfe2579-20260814210113",
+          "runDir": "runs/escalate_ticket-7dfe2579-20260814210113",
+          "scenarioKey": "escalate_ticket",
+          "personaKey": "support_lead",
+          "atMs": 7350,
+          "clip": {
+            "runId": "escalate_ticket-7dfe2579-20260814210113",
+            "runDir": "runs/escalate_ticket-7dfe2579-20260814210113",
+            "startMs": 0,
+            "focusMs": 7350,
+            "endMs": 17350,
+            "entries": [
+              {
+                "atMs": 441,
+                "kind": "action",
+                "stepIndex": 0,
+                "label": "typed “lead@meridian.test” into “Work email”",
+                "screenshot": "steps/000.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 499,
+                "kind": "action",
+                "stepIndex": 1,
+                "label": "typed “[redacted]” into “Password”",
+                "screenshot": "steps/001.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 547,
+                "kind": "action",
+                "stepIndex": 2,
+                "label": "clicked “Sign in”",
+                "screenshot": "steps/002.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 928,
+                "kind": "action",
+                "stepIndex": 3,
+                "label": "waited 800ms",
+                "screenshot": "steps/003.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1771,
+                "kind": "action",
+                "stepIndex": 4,
+                "label": "typed “payments dashboard” into “Search tickets”",
+                "screenshot": "steps/004.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1866,
+                "kind": "action",
+                "stepIndex": 5,
+                "label": "clicked “Search”",
+                "screenshot": "steps/005.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 2260,
+                "kind": "action",
+                "stepIndex": 6,
+                "label": "waited 600ms",
+                "screenshot": "steps/006.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 2895,
+                "kind": "action",
+                "stepIndex": 7,
+                "label": "clicked “Payments dashboard blank after login (#1027)”",
+                "screenshot": "steps/007.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 2980,
+                "kind": "action",
+                "stepIndex": 8,
+                "label": "waited 600ms",
+                "screenshot": "steps/008.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 3639,
+                "kind": "action",
+                "stepIndex": 9,
+                "label": "clicked “Escalate ticket”",
+                "screenshot": "steps/009.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4044,
+                "kind": "action",
+                "stepIndex": 10,
+                "label": "typed “Customer blocked from billing” into “Why does this need escalating?”",
+                "screenshot": "steps/010.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4088,
+                "kind": "action",
+                "stepIndex": 11,
+                "label": "clicked “Next”",
+                "screenshot": "steps/011.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4475,
+                "kind": "action",
+                "stepIndex": 12,
+                "label": "selected “sev2” “Severity”",
+                "screenshot": "steps/012.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4511,
+                "kind": "action",
+                "stepIndex": 13,
+                "label": "clicked “Next”",
+                "screenshot": "steps/013.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4876,
+                "kind": "action",
+                "stepIndex": 14,
+                "label": "typed “payments-rota” into “On-call contact”",
+                "screenshot": "steps/014.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4927,
+                "kind": "action",
+                "stepIndex": 15,
+                "label": "clicked “Submit escalation”",
+                "screenshot": "steps/015.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4994,
+                "kind": "transient",
+                "stepIndex": 15,
+                "label": "app showed: “Ticket escalated”",
+                "severity": "info"
+              },
+              {
+                "atMs": 5309,
+                "kind": "action",
+                "stepIndex": 16,
+                "label": "waited 2000ms",
+                "screenshot": "steps/016.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 5605,
+                "kind": "network",
+                "stepIndex": 16,
+                "label": "POST /api/tickets/1027/escalate → 500",
+                "severity": "error"
+              },
+              {
+                "atMs": 5605,
+                "kind": "console",
+                "stepIndex": 16,
+                "label": "console error",
+                "detail": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+                "severity": "error"
+              },
+              {
+                "atMs": 7350,
+                "kind": "action",
+                "stepIndex": 17,
+                "label": "finished — believed success: Signed in, found ticket #1027, and escalated it as Sev 2 to payments-rota. The interface c",
+                "screenshot": "steps/017.png",
+                "severity": "info"
+              }
+            ]
+          }
+        }
+      ],
+      "reproducedIn": "2 / 2 attempts",
+      "codeRefs": [
+        {
+          "path": "server.js",
+          "line": 155,
+          "snippet": "app.get(\"/api/state\", (_req, res) =>",
+          "why": "handles the endpoint seen failing at runtime (/api/state)"
+        },
+        {
+          "path": "public/tickets.js",
+          "line": 14,
+          "snippet": "const res = await fetch(`/api/tickets?q=${encodeURIComponent(q)}&page=${page}`);",
+          "why": "handles the endpoint seen failing at runtime (/api/tickets/1027)"
+        },
+        {
+          "path": "public/ticket.js",
+          "line": 46,
+          "snippet": "const res = await fetch(`/api/tickets/${ticketId}`);",
+          "why": "handles the endpoint seen failing at runtime (/api/tickets/1027)"
+        }
+      ],
+      "sourceModified": false
+    },
+    {
+      "id": "797f80fc6e06",
+      "category": "critical_failure",
+      "severity": "critical",
+      "confidence": 0.93,
+      "title": "Server error 500 on POST /api/tickets/1027/escalate",
+      "observed": "POST /api/tickets/1027/escalate returned HTTP 500 during the workflow.",
+      "expected": "The request should succeed, or the interface should surface a recoverable error.",
+      "reproduction": [
+        "Type “lead@meridian.test” into “Work email”",
+        "Type “[redacted]” into “Password”",
+        "Click “Sign in”",
+        "Type “payments dashboard” into “Search tickets”",
+        "Click “Search”",
+        "Click “Payments dashboard blank after login (#1027)”",
+        "Click “Escalate ticket”",
+        "Type “Customer blocked from billing” into “Why does this need escalating?”",
+        "Click “Next”",
+        "Select “sev2” “Severity”",
+        "Click “Next”",
+        "Type “payments-rota” into “On-call contact”",
+        "… 1 more actions"
+      ],
+      "evidence": [
+        "POST http://localhost:4175/api/tickets/1027/escalate → 500"
+      ],
+      "occurrences": [
+        {
+          "runId": "escalate_ticket-4a7cb116-20260814210113",
+          "runDir": "runs/escalate_ticket-4a7cb116-20260814210113",
+          "scenarioKey": "escalate_ticket",
+          "personaKey": "support_lead",
+          "atMs": 5651,
+          "clip": {
+            "runId": "escalate_ticket-4a7cb116-20260814210113",
+            "runDir": "runs/escalate_ticket-4a7cb116-20260814210113",
+            "startMs": 0,
+            "focusMs": 5651,
+            "endMs": 15651,
+            "entries": [
+              {
+                "atMs": 451,
+                "kind": "action",
+                "stepIndex": 0,
+                "label": "typed “lead@meridian.test” into “Work email”",
+                "screenshot": "steps/000.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 538,
+                "kind": "action",
+                "stepIndex": 1,
+                "label": "typed “[redacted]” into “Password”",
+                "screenshot": "steps/001.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 603,
+                "kind": "action",
+                "stepIndex": 2,
+                "label": "clicked “Sign in”",
+                "screenshot": "steps/002.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 992,
+                "kind": "action",
+                "stepIndex": 3,
+                "label": "waited 800ms",
+                "screenshot": "steps/003.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1845,
+                "kind": "action",
+                "stepIndex": 4,
+                "label": "typed “payments dashboard” into “Search tickets”",
+                "screenshot": "steps/004.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1907,
+                "kind": "action",
+                "stepIndex": 5,
+                "label": "clicked “Search”",
+                "screenshot": "steps/005.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 2281,
+                "kind": "action",
+                "stepIndex": 6,
+                "label": "waited 600ms",
+                "screenshot": "steps/006.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 2930,
+                "kind": "action",
+                "stepIndex": 7,
+                "label": "clicked “Payments dashboard blank after login (#1027)”",
+                "screenshot": "steps/007.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 3029,
+                "kind": "action",
+                "stepIndex": 8,
+                "label": "waited 600ms",
+                "screenshot": "steps/008.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 3691,
+                "kind": "action",
+                "stepIndex": 9,
+                "label": "clicked “Escalate ticket”",
+                "screenshot": "steps/009.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4065,
+                "kind": "action",
+                "stepIndex": 10,
+                "label": "typed “Customer blocked from billing” into “Why does this need escalating?”",
+                "screenshot": "steps/010.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4115,
+                "kind": "action",
+                "stepIndex": 11,
+                "label": "clicked “Next”",
+                "screenshot": "steps/011.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4493,
+                "kind": "action",
+                "stepIndex": 12,
+                "label": "selected “sev2” “Severity”",
+                "screenshot": "steps/012.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4535,
+                "kind": "action",
+                "stepIndex": 13,
+                "label": "clicked “Next”",
+                "screenshot": "steps/013.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4900,
+                "kind": "action",
+                "stepIndex": 14,
+                "label": "typed “payments-rota” into “On-call contact”",
+                "screenshot": "steps/014.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4952,
+                "kind": "action",
+                "stepIndex": 15,
+                "label": "clicked “Submit escalation”",
+                "screenshot": "steps/015.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 5037,
+                "kind": "transient",
+                "stepIndex": 15,
+                "label": "app showed: “Ticket escalated”",
+                "severity": "info"
+              },
+              {
+                "atMs": 5355,
+                "kind": "action",
+                "stepIndex": 16,
+                "label": "waited 2000ms",
+                "screenshot": "steps/016.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 5651,
+                "kind": "network",
+                "stepIndex": 16,
+                "label": "POST /api/tickets/1027/escalate → 500",
+                "severity": "error"
+              },
+              {
+                "atMs": 5652,
+                "kind": "console",
+                "stepIndex": 16,
+                "label": "console error",
+                "detail": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+                "severity": "error"
+              },
+              {
+                "atMs": 7408,
+                "kind": "action",
+                "stepIndex": 17,
+                "label": "finished — believed success: Signed in, found ticket #1027, and escalated it as Sev 2 to payments-rota. The interface c",
+                "screenshot": "steps/017.png",
+                "severity": "info"
+              }
+            ]
+          }
+        },
+        {
+          "runId": "escalate_ticket-7dfe2579-20260814210113",
+          "runDir": "runs/escalate_ticket-7dfe2579-20260814210113",
+          "scenarioKey": "escalate_ticket",
+          "personaKey": "support_lead",
+          "atMs": 5605,
+          "clip": {
+            "runId": "escalate_ticket-7dfe2579-20260814210113",
+            "runDir": "runs/escalate_ticket-7dfe2579-20260814210113",
+            "startMs": 0,
+            "focusMs": 5605,
+            "endMs": 15605,
+            "entries": [
+              {
+                "atMs": 441,
+                "kind": "action",
+                "stepIndex": 0,
+                "label": "typed “lead@meridian.test” into “Work email”",
+                "screenshot": "steps/000.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 499,
+                "kind": "action",
+                "stepIndex": 1,
+                "label": "typed “[redacted]” into “Password”",
+                "screenshot": "steps/001.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 547,
+                "kind": "action",
+                "stepIndex": 2,
+                "label": "clicked “Sign in”",
+                "screenshot": "steps/002.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 928,
+                "kind": "action",
+                "stepIndex": 3,
+                "label": "waited 800ms",
+                "screenshot": "steps/003.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1771,
+                "kind": "action",
+                "stepIndex": 4,
+                "label": "typed “payments dashboard” into “Search tickets”",
+                "screenshot": "steps/004.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1866,
+                "kind": "action",
+                "stepIndex": 5,
+                "label": "clicked “Search”",
+                "screenshot": "steps/005.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 2260,
+                "kind": "action",
+                "stepIndex": 6,
+                "label": "waited 600ms",
+                "screenshot": "steps/006.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 2895,
+                "kind": "action",
+                "stepIndex": 7,
+                "label": "clicked “Payments dashboard blank after login (#1027)”",
+                "screenshot": "steps/007.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 2980,
+                "kind": "action",
+                "stepIndex": 8,
+                "label": "waited 600ms",
+                "screenshot": "steps/008.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 3639,
+                "kind": "action",
+                "stepIndex": 9,
+                "label": "clicked “Escalate ticket”",
+                "screenshot": "steps/009.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4044,
+                "kind": "action",
+                "stepIndex": 10,
+                "label": "typed “Customer blocked from billing” into “Why does this need escalating?”",
+                "screenshot": "steps/010.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4088,
+                "kind": "action",
+                "stepIndex": 11,
+                "label": "clicked “Next”",
+                "screenshot": "steps/011.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4475,
+                "kind": "action",
+                "stepIndex": 12,
+                "label": "selected “sev2” “Severity”",
+                "screenshot": "steps/012.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4511,
+                "kind": "action",
+                "stepIndex": 13,
+                "label": "clicked “Next”",
+                "screenshot": "steps/013.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4876,
+                "kind": "action",
+                "stepIndex": 14,
+                "label": "typed “payments-rota” into “On-call contact”",
+                "screenshot": "steps/014.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4927,
+                "kind": "action",
+                "stepIndex": 15,
+                "label": "clicked “Submit escalation”",
+                "screenshot": "steps/015.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4994,
+                "kind": "transient",
+                "stepIndex": 15,
+                "label": "app showed: “Ticket escalated”",
+                "severity": "info"
+              },
+              {
+                "atMs": 5309,
+                "kind": "action",
+                "stepIndex": 16,
+                "label": "waited 2000ms",
+                "screenshot": "steps/016.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 5605,
+                "kind": "network",
+                "stepIndex": 16,
+                "label": "POST /api/tickets/1027/escalate → 500",
+                "severity": "error"
+              },
+              {
+                "atMs": 5605,
+                "kind": "console",
+                "stepIndex": 16,
+                "label": "console error",
+                "detail": "Failed to load resource: the server responded with a status of 500 (Internal Server Error)",
+                "severity": "error"
+              },
+              {
+                "atMs": 7350,
+                "kind": "action",
+                "stepIndex": 17,
+                "label": "finished — believed success: Signed in, found ticket #1027, and escalated it as Sev 2 to payments-rota. The interface c",
+                "screenshot": "steps/017.png",
+                "severity": "info"
+              }
+            ]
+          }
+        }
+      ],
+      "reproducedIn": "2 / 2 attempts",
+      "codeRefs": [
+        {
+          "path": "server.js",
+          "line": 177,
+          "snippet": "console.log(`Meridian Support on http://localhost:${PORT}  (FIXED=${FIXED ? \"1\" : \"0\"})`);",
+          "why": "handles the endpoint seen failing at runtime (//localhost)"
+        }
+      ],
+      "sourceModified": false
+    }
+  ],
+  "findingCounts": {
+    "critical_failure": 2,
+    "functional_bug": 0,
+    "visual_bug": 0,
+    "performance": 0,
+    "usability": 0,
+    "qol_recommendation": 0
+  }
+}

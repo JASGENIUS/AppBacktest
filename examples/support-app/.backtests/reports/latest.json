@@ -1,0 +1,311 @@
+{
+  "formatVersion": 1,
+  "appbacktestVersion": "0.1.0",
+  "app": {
+    "name": "Meridian Support",
+    "url": "http://localhost:4175"
+  },
+  "seed": "606060",
+  "configHash": "121dfa26423aa31bf725b3fd6a69f1b31fc7f579aaf71ef40447605bb7ed54ea",
+  "checksByScenario": {
+    "concurrent_triage": [
+      {
+        "type": "http",
+        "url": "/api/state",
+        "path": "tickets.26.tags",
+        "count": 2
+      }
+    ]
+  },
+  "startedAt": "2026-08-15T05:29:22.268Z",
+  "finishedAt": "2026-08-15T05:29:31.977Z",
+  "runs": [
+    {
+      "runId": "concurrent_triage-b72829c9-20260814212921",
+      "scenarioKey": "concurrent_triage",
+      "personaKey": "agent",
+      "subSeed": "606060:concurrent_triage:0",
+      "verdict": "PASS",
+      "ending": "done",
+      "discrepancy": false,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": true,
+      "steps": 22,
+      "durationMs": 9141,
+      "observationCounts": {
+        "console_error": 1,
+        "http_error": 1
+      },
+      "runDir": "runs/concurrent_triage-b72829c9-20260814212921"
+    }
+  ],
+  "totals": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "setupFailed": 0,
+    "discrepancies": 0,
+    "reverseDiscrepancies": 0,
+    "passedWithObservations": 1,
+    "byFailureKind": {},
+    "actions": 22
+  },
+  "findings": [
+    {
+      "id": "dc915d355ada",
+      "category": "usability",
+      "severity": "medium",
+      "confidence": 0.75,
+      "title": "Saved content is hard to find afterwards",
+      "observed": "The simulated user entered “billing” and the application confirmed it with “Triage saved”. Continuing to use the application, that content was not visible on any screen the user reached afterwards.",
+      "userImpact": "Users may be unsure whether their input was really saved, or where to go to see it again.",
+      "suggestion": "Consider showing the saved content on the screen it belongs to, or providing a clearly visible way to reach it.",
+      "reproduction": [],
+      "evidence": [
+        "app confirmed: “Triage saved”",
+        "entered content: “billing”"
+      ],
+      "occurrences": [
+        {
+          "runId": "concurrent_triage-b72829c9-20260814212921",
+          "runDir": "runs/concurrent_triage-b72829c9-20260814212921",
+          "scenarioKey": "concurrent_triage",
+          "personaKey": "agent",
+          "atMs": 6569,
+          "clip": {
+            "runId": "concurrent_triage-b72829c9-20260814212921",
+            "runDir": "runs/concurrent_triage-b72829c9-20260814212921",
+            "startMs": 0,
+            "focusMs": 6569,
+            "endMs": 16569,
+            "entries": [
+              {
+                "atMs": 884,
+                "kind": "action",
+                "stepIndex": 0,
+                "label": "ben: typed “ben@meridian.test” into “Work email”",
+                "screenshot": "steps/000.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 981,
+                "kind": "action",
+                "stepIndex": 1,
+                "label": "ana: typed “ana@meridian.test” into “Work email”",
+                "screenshot": "steps/001.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1039,
+                "kind": "action",
+                "stepIndex": 2,
+                "label": "ana: typed “[redacted]” into “Password”",
+                "screenshot": "steps/002.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1075,
+                "kind": "action",
+                "stepIndex": 3,
+                "label": "ben: typed “[redacted]” into “Password”",
+                "screenshot": "steps/003.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1127,
+                "kind": "action",
+                "stepIndex": 4,
+                "label": "ben: clicked “Sign in”",
+                "screenshot": "steps/004.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 1509,
+                "kind": "action",
+                "stepIndex": 5,
+                "label": "ben: waited 700ms",
+                "screenshot": "steps/005.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 2262,
+                "kind": "action",
+                "stepIndex": 6,
+                "label": "ben: navigated to /tickets/1027",
+                "screenshot": "steps/006.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 2324,
+                "kind": "action",
+                "stepIndex": 7,
+                "label": "ana: clicked “Sign in”",
+                "screenshot": "steps/007.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 2695,
+                "kind": "action",
+                "stepIndex": 8,
+                "label": "ben: waited 700ms",
+                "screenshot": "steps/008.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 3452,
+                "kind": "action",
+                "stepIndex": 9,
+                "label": "ana: waited 700ms",
+                "screenshot": "steps/009.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4195,
+                "kind": "action",
+                "stepIndex": 10,
+                "label": "ben: typed “ben” into “Assign to”",
+                "screenshot": "steps/010.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4253,
+                "kind": "action",
+                "stepIndex": 11,
+                "label": "ana: navigated to /tickets/1027",
+                "screenshot": "steps/011.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4307,
+                "kind": "action",
+                "stepIndex": 12,
+                "label": "ben: typed “urgent” into “Add a tag”",
+                "screenshot": "steps/012.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 4345,
+                "kind": "action",
+                "stepIndex": 13,
+                "label": "ana: waited 700ms",
+                "screenshot": "steps/013.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 5096,
+                "kind": "action",
+                "stepIndex": 14,
+                "label": "ben: clicked “Save triage”",
+                "screenshot": "steps/014.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 5185,
+                "kind": "transient",
+                "stepIndex": 14,
+                "label": "app showed: “Triage saved”",
+                "severity": "info"
+              },
+              {
+                "atMs": 5485,
+                "kind": "action",
+                "stepIndex": 15,
+                "label": "ana: typed “ana” into “Assign to”",
+                "screenshot": "steps/015.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 5548,
+                "kind": "action",
+                "stepIndex": 16,
+                "label": "ana: typed “billing” into “Add a tag”",
+                "screenshot": "steps/016.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 5594,
+                "kind": "action",
+                "stepIndex": 17,
+                "label": "ben: waited 900ms",
+                "screenshot": "steps/017.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 6537,
+                "kind": "action",
+                "stepIndex": 18,
+                "label": "ben: finished — believed success: Assigned #1027 to ben and tagged it urgent. The page confirmed the triage was saved.",
+                "screenshot": "steps/018.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 6569,
+                "kind": "action",
+                "stepIndex": 19,
+                "label": "ana: clicked “Save triage”",
+                "screenshot": "steps/019.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 6651,
+                "kind": "network",
+                "stepIndex": 19,
+                "label": "POST /api/tickets/1027/triage → 409",
+                "severity": "warning"
+              },
+              {
+                "atMs": 6652,
+                "kind": "console",
+                "stepIndex": 19,
+                "label": "console error",
+                "detail": "Failed to load resource: the server responded with a status of 409 (Conflict)",
+                "severity": "error"
+              },
+              {
+                "atMs": 6656,
+                "kind": "transient",
+                "stepIndex": 19,
+                "label": "app showed: “Triage saved”",
+                "severity": "info"
+              },
+              {
+                "atMs": 6942,
+                "kind": "action",
+                "stepIndex": 20,
+                "label": "ana: waited 900ms",
+                "screenshot": "steps/020.png",
+                "severity": "info"
+              },
+              {
+                "atMs": 7889,
+                "kind": "action",
+                "stepIndex": 21,
+                "label": "ana: finished — believed success: Assigned #1027 to ana and tagged it billing. The page confirmed the triage was saved.",
+                "screenshot": "steps/021.png",
+                "severity": "info"
+              }
+            ]
+          }
+        }
+      ],
+      "reproducedIn": "1 / 1 attempts",
+      "codeRefs": [
+        {
+          "path": "public/ticket.js",
+          "line": 142,
+          "snippet": "showToast(\"Triage saved\");",
+          "why": "label of the control involved in the finding"
+        }
+      ],
+      "sourceModified": false
+    }
+  ],
+  "findingCounts": {
+    "critical_failure": 0,
+    "functional_bug": 0,
+    "visual_bug": 0,
+    "performance": 0,
+    "usability": 1,
+    "qol_recommendation": 0
+  }
+}

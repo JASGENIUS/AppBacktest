@@ -57,6 +57,11 @@ scenarios:                 # a goal and its proof, side by side
 
 runs: 1
 browser: { headless: true, actionTimeoutMs: 8000 }
+
+# Evidence (records, screenshots, replays) is written under outDir, which is
+# resolved relative to THIS file. Testing a throwaway copy of an app? Point
+# outDir somewhere durable or the replays are deleted along with the copy.
+# outDir: /absolute/path/to/keep/evidence
 `;
 
 const GITIGNORE_STANZA = `

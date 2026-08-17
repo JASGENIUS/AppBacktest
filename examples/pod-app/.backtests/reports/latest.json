@@ -1,0 +1,95 @@
+{
+  "formatVersion": 1,
+  "appbacktestVersion": "0.1.0",
+  "app": {
+    "name": "POD Demo",
+    "url": "http://localhost:4173"
+  },
+  "seed": "424242",
+  "configHash": "966b1e6dd7e4cfd9945b83cb10a18699ac0c6cb1121749ba2af3abf75fa9bf1e",
+  "checksByScenario": {
+    "all_checks": [
+      {
+        "type": "url",
+        "contains": "/loads/"
+      },
+      {
+        "type": "text",
+        "contains": "Proof of delivery"
+      },
+      {
+        "type": "no_text",
+        "contains": "Internal Server Error"
+      },
+      {
+        "type": "transient",
+        "contains": "Upload received"
+      },
+      {
+        "type": "element",
+        "role": "button",
+        "name": "Upload POD"
+      },
+      {
+        "type": "no_element",
+        "role": "button",
+        "name": "Delete everything"
+      },
+      {
+        "type": "http",
+        "url": "/api/loads/38419/pods",
+        "count": 1
+      },
+      {
+        "type": "http",
+        "url": "/api/loads/38419",
+        "path": "status",
+        "equals": "in_transit"
+      },
+      {
+        "type": "http",
+        "url": "/api/loads/99999",
+        "expectStatus": 404
+      }
+    ]
+  },
+  "startedAt": "2026-08-15T05:28:10.513Z",
+  "finishedAt": "2026-08-15T05:28:15.478Z",
+  "runs": [
+    {
+      "runId": "all_checks-de992dd2-20260814212809",
+      "scenarioKey": "all_checks",
+      "personaKey": "driver",
+      "subSeed": "424242:all_checks:0",
+      "verdict": "PASS",
+      "ending": "done",
+      "discrepancy": false,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 6,
+      "durationMs": 4379,
+      "observationCounts": {},
+      "runDir": "runs/all_checks-de992dd2-20260814212809"
+    }
+  ],
+  "totals": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "setupFailed": 0,
+    "discrepancies": 0,
+    "reverseDiscrepancies": 0,
+    "passedWithObservations": 0,
+    "byFailureKind": {},
+    "actions": 6
+  },
+  "findings": [],
+  "findingCounts": {
+    "critical_failure": 0,
+    "functional_bug": 0,
+    "visual_bug": 0,
+    "performance": 0,
+    "usability": 0,
+    "qol_recommendation": 0
+  }
+}

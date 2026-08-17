@@ -1,0 +1,457 @@
+{
+  "formatVersion": 1,
+  "appbacktestVersion": "0.1.0",
+  "runId": "submit_expense-fb2fc6e7-20260814212843",
+  "seed": "555001",
+  "subSeed": "555001:submit_expense:0",
+  "scenarioKey": "submit_expense",
+  "personaKey": "methodical",
+  "goal": "Submit a new expense for a client lunch that cost 48.20, categorised as Meals, with the note \"Client lunch with Acme\" attached. Make sure the expense is actually saved before you finish.\n",
+  "world": {
+    "persona": {
+      "device": "desktop",
+      "patience": "normal",
+      "maxSteps": 20,
+      "doubleClickChance": 0,
+      "uploadSizeKB": 200,
+      "traits": [
+        "works through forms top to bottom",
+        "leaves optional extras until the end"
+      ]
+    }
+  },
+  "provider": {
+    "type": "fixture"
+  },
+  "app": {
+    "name": "Cove Expenses",
+    "url": "http://localhost:4174"
+  },
+  "configHash": "4719a9a8ec1f48167ac0cd62a91c25715d7322f87a20b3aac0ca72cea044965f",
+  "checks": [
+    {
+      "type": "transient",
+      "contains": "Expense submitted"
+    },
+    {
+      "type": "http",
+      "url": "/api/expenses",
+      "count": 3
+    },
+    {
+      "type": "http",
+      "url": "/api/expenses",
+      "path": "2.category",
+      "equals": "meals"
+    }
+  ],
+  "startedAt": "2026-08-15T05:28:43.840Z",
+  "steps": [
+    {
+      "index": 0,
+      "elapsedMs": 0,
+      "preUrl": "http://localhost:4174/",
+      "perceptionDigest": "e92ee3173d73b457d8a4c7c91b6fe9eb5f7c2531a1fcc66f2dedde72619aa8de",
+      "perception": {
+        "title": "Cove — Expenses",
+        "elementCount": 3
+      },
+      "action": {
+        "kind": "click",
+        "ref": "f0:e0"
+      },
+      "target": {
+        "role": "link",
+        "name": "New expense",
+        "nth": 0
+      },
+      "perturbations": [],
+      "incidents": {
+        "consoleDelta": [],
+        "networkDelta": [],
+        "transientMessages": [],
+        "transientEvents": [],
+        "dialogs": [],
+        "tabSwitched": false
+      },
+      "result": {
+        "ok": true,
+        "urlAfter": "http://localhost:4174/new"
+      },
+      "screenshot": "steps/000.png",
+      "tsStart": "2026-08-15T05:28:44.320Z",
+      "tsEnd": "2026-08-15T05:28:44.443Z"
+    },
+    {
+      "index": 1,
+      "elapsedMs": 0,
+      "preUrl": "http://localhost:4174/new",
+      "perceptionDigest": "88744905d20fb0d8c206980f1356446e89a5460008591cee8ee026cbe00d6c41",
+      "perception": {
+        "title": "New expense — Cove",
+        "elementCount": 6
+      },
+      "action": {
+        "kind": "type",
+        "ref": "f0:e1",
+        "text": "Client lunch"
+      },
+      "target": {
+        "role": "textbox",
+        "name": "Description",
+        "nth": 0
+      },
+      "perturbations": [],
+      "incidents": {
+        "consoleDelta": [],
+        "networkDelta": [],
+        "transientMessages": [],
+        "transientEvents": [],
+        "dialogs": [],
+        "tabSwitched": false
+      },
+      "result": {
+        "ok": true,
+        "urlAfter": "http://localhost:4174/new"
+      },
+      "screenshot": "steps/001.png",
+      "tsStart": "2026-08-15T05:28:44.443Z",
+      "tsEnd": "2026-08-15T05:28:44.507Z"
+    },
+    {
+      "index": 2,
+      "elapsedMs": 0,
+      "preUrl": "http://localhost:4174/new",
+      "perceptionDigest": "88744905d20fb0d8c206980f1356446e89a5460008591cee8ee026cbe00d6c41",
+      "perception": {
+        "title": "New expense — Cove",
+        "elementCount": 6
+      },
+      "action": {
+        "kind": "type",
+        "ref": "f0:e2",
+        "text": "48.20"
+      },
+      "target": {
+        "role": "textbox",
+        "name": "Amount",
+        "nth": 0
+      },
+      "perturbations": [],
+      "incidents": {
+        "consoleDelta": [],
+        "networkDelta": [],
+        "transientMessages": [],
+        "transientEvents": [],
+        "dialogs": [],
+        "tabSwitched": false
+      },
+      "result": {
+        "ok": true,
+        "urlAfter": "http://localhost:4174/new"
+      },
+      "screenshot": "steps/002.png",
+      "tsStart": "2026-08-15T05:28:44.507Z",
+      "tsEnd": "2026-08-15T05:28:44.544Z"
+    },
+    {
+      "index": 3,
+      "elapsedMs": 1,
+      "preUrl": "http://localhost:4174/new",
+      "perceptionDigest": "88744905d20fb0d8c206980f1356446e89a5460008591cee8ee026cbe00d6c41",
+      "perception": {
+        "title": "New expense — Cove",
+        "elementCount": 6
+      },
+      "action": {
+        "kind": "select",
+        "ref": "f0:e3",
+        "value": "meals"
+      },
+      "target": {
+        "role": "select",
+        "name": "Category",
+        "nth": 0
+      },
+      "perturbations": [],
+      "incidents": {
+        "consoleDelta": [],
+        "networkDelta": [],
+        "transientMessages": [],
+        "transientEvents": [],
+        "dialogs": [],
+        "tabSwitched": false
+      },
+      "result": {
+        "ok": true,
+        "urlAfter": "http://localhost:4174/new"
+      },
+      "screenshot": "steps/003.png",
+      "tsStart": "2026-08-15T05:28:44.545Z",
+      "tsEnd": "2026-08-15T05:28:44.578Z"
+    },
+    {
+      "index": 4,
+      "elapsedMs": 1,
+      "preUrl": "http://localhost:4174/new",
+      "perceptionDigest": "88744905d20fb0d8c206980f1356446e89a5460008591cee8ee026cbe00d6c41",
+      "perception": {
+        "title": "New expense — Cove",
+        "elementCount": 6
+      },
+      "action": {
+        "kind": "click",
+        "ref": "f0:e4"
+      },
+      "target": {
+        "role": "button",
+        "name": "Add note",
+        "nth": 0
+      },
+      "perturbations": [],
+      "incidents": {
+        "consoleDelta": [],
+        "networkDelta": [],
+        "transientMessages": [],
+        "transientEvents": [],
+        "dialogs": [],
+        "tabSwitched": false
+      },
+      "result": {
+        "ok": true,
+        "urlAfter": "http://localhost:4174/new"
+      },
+      "screenshot": "steps/004.png",
+      "tsStart": "2026-08-15T05:28:44.579Z",
+      "tsEnd": "2026-08-15T05:28:44.952Z"
+    },
+    {
+      "index": 5,
+      "elapsedMs": 0,
+      "preUrl": "http://localhost:4174/new",
+      "perceptionDigest": "67c3c21b29dc555455db3f6c1f764f720165de31b71f962894247a8355e12190",
+      "perception": {
+        "title": "New expense — Cove",
+        "elementCount": 9,
+        "modalOpen": "Add a note"
+      },
+      "action": {
+        "kind": "type",
+        "ref": "f0:e6",
+        "text": "Client lunch with Acme"
+      },
+      "target": {
+        "role": "textbox",
+        "name": "Note",
+        "nth": 0
+      },
+      "perturbations": [],
+      "incidents": {
+        "consoleDelta": [],
+        "networkDelta": [],
+        "transientMessages": [],
+        "transientEvents": [],
+        "dialogs": [],
+        "tabSwitched": false
+      },
+      "result": {
+        "ok": true,
+        "urlAfter": "http://localhost:4174/new"
+      },
+      "screenshot": "steps/005.png",
+      "tsStart": "2026-08-15T05:28:44.952Z",
+      "tsEnd": "2026-08-15T05:28:44.994Z"
+    },
+    {
+      "index": 6,
+      "elapsedMs": 0,
+      "preUrl": "http://localhost:4174/new",
+      "perceptionDigest": "67c3c21b29dc555455db3f6c1f764f720165de31b71f962894247a8355e12190",
+      "perception": {
+        "title": "New expense — Cove",
+        "elementCount": 9,
+        "modalOpen": "Add a note"
+      },
+      "action": {
+        "kind": "click",
+        "ref": "f0:e8"
+      },
+      "target": {
+        "role": "button",
+        "name": "Save note",
+        "nth": 0
+      },
+      "perturbations": [],
+      "incidents": {
+        "consoleDelta": [],
+        "networkDelta": [],
+        "transientMessages": [],
+        "transientEvents": [],
+        "dialogs": [],
+        "tabSwitched": false
+      },
+      "result": {
+        "ok": true,
+        "urlAfter": "http://localhost:4174/new"
+      },
+      "screenshot": "steps/006.png",
+      "tsStart": "2026-08-15T05:28:44.994Z",
+      "tsEnd": "2026-08-15T05:28:45.369Z"
+    },
+    {
+      "index": 7,
+      "elapsedMs": 0,
+      "preUrl": "http://localhost:4174/new",
+      "perceptionDigest": "88744905d20fb0d8c206980f1356446e89a5460008591cee8ee026cbe00d6c41",
+      "perception": {
+        "title": "New expense — Cove",
+        "elementCount": 6
+      },
+      "action": {
+        "kind": "click",
+        "ref": "f0:e5"
+      },
+      "target": {
+        "role": "button",
+        "name": "Submit expense",
+        "nth": 0
+      },
+      "perturbations": [],
+      "incidents": {
+        "consoleDelta": [],
+        "networkDelta": [],
+        "transientMessages": [],
+        "transientEvents": [],
+        "dialogs": [],
+        "tabSwitched": false
+      },
+      "result": {
+        "ok": true,
+        "urlAfter": "http://localhost:4174/new"
+      },
+      "screenshot": "steps/007.png",
+      "tsStart": "2026-08-15T05:28:45.369Z",
+      "tsEnd": "2026-08-15T05:28:45.754Z"
+    },
+    {
+      "index": 8,
+      "elapsedMs": 0,
+      "preUrl": "http://localhost:4174/new",
+      "perceptionDigest": "88744905d20fb0d8c206980f1356446e89a5460008591cee8ee026cbe00d6c41",
+      "perception": {
+        "title": "New expense — Cove",
+        "elementCount": 6
+      },
+      "action": {
+        "kind": "wait",
+        "ms": 1500
+      },
+      "perturbations": [],
+      "incidents": {
+        "consoleDelta": [],
+        "networkDelta": [],
+        "transientMessages": [
+          "Expense submitted"
+        ],
+        "transientEvents": [
+          {
+            "text": "Expense submitted",
+            "atMs": 1786771725803
+          }
+        ],
+        "dialogs": [],
+        "tabSwitched": false
+      },
+      "result": {
+        "ok": true,
+        "urlAfter": "http://localhost:4174/"
+      },
+      "screenshot": "steps/008.png",
+      "tsStart": "2026-08-15T05:28:45.754Z",
+      "tsEnd": "2026-08-15T05:28:47.303Z"
+    },
+    {
+      "index": 9,
+      "elapsedMs": 0,
+      "preUrl": "http://localhost:4174/",
+      "perceptionDigest": "af36c3b6857b4d8bbf8f7e170d882ebbe74e68b092069bd8ca6618ab2c736366",
+      "perception": {
+        "title": "Cove — Expenses",
+        "elementCount": 4
+      },
+      "action": {
+        "kind": "done",
+        "outcome": "success",
+        "summary": "Submitted the client lunch expense as Meals with the note attached."
+      },
+      "perturbations": [],
+      "incidents": {
+        "consoleDelta": [],
+        "networkDelta": [],
+        "transientMessages": [],
+        "transientEvents": [],
+        "dialogs": [],
+        "tabSwitched": false
+      },
+      "result": {
+        "ok": true,
+        "urlAfter": "http://localhost:4174/"
+      },
+      "screenshot": "steps/009.png",
+      "tsStart": "2026-08-15T05:28:47.303Z",
+      "tsEnd": "2026-08-15T05:28:47.330Z"
+    }
+  ],
+  "observations": [],
+  "evaluation": {
+    "verdict": "FAIL",
+    "failureKind": "assertion",
+    "ending": "done",
+    "checkResults": [
+      {
+        "check": {
+          "type": "transient",
+          "contains": "Expense submitted"
+        },
+        "passed": true,
+        "errored": false,
+        "actual": [
+          "Expense submitted"
+        ],
+        "attempts": 1
+      },
+      {
+        "check": {
+          "type": "http",
+          "url": "/api/expenses",
+          "count": 3
+        },
+        "passed": true,
+        "errored": false,
+        "actual": "[{\"amount\":\"89.00\",\"category\":\"software\",\"description\":\"Monitor stand\",\"id\":1,\"note\":\"\",\"status\":\"approved\"},{\"amount\":\"62.40\",\"category\":\"travel\",\"description\":\"Taxi to airport\",\"id\":2,\"note\":\"\",\"status\":\"submitted\"},{\"amount\":\"48.20\",\"category\":\"uncategorized\",\"description\":\"Client lunch\",\"id\":3,…",
+        "attempts": 1
+      },
+      {
+        "check": {
+          "type": "http",
+          "url": "/api/expenses",
+          "path": "2.category",
+          "equals": "meals"
+        },
+        "passed": false,
+        "errored": false,
+        "actual": "\"uncategorized\"",
+        "detail": "expected \"meals\"",
+        "attempts": 9
+      }
+    ],
+    "agentBelief": {
+      "outcome": "success",
+      "summary": "Submitted the client lunch expense as Meals with the note attached."
+    },
+    "discrepancy": true,
+    "reverseDiscrepancy": false,
+    "passedWithObservations": false
+  },
+  "finishedAt": "2026-08-15T05:28:52.683Z"
+}

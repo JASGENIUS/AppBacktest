@@ -1,0 +1,97 @@
+{
+  "formatVersion": 1,
+  "appbacktestVersion": "0.1.0",
+  "app": {
+    "name": "Cove Expenses",
+    "url": "http://localhost:4174"
+  },
+  "seed": "555001",
+  "configHash": "83a881c2c6b3b402c48122078f07d168afe37981a5bdad6da5160a0e7eaea197",
+  "checksByScenario": {
+    "submit_expense": [
+      {
+        "type": "transient",
+        "contains": "Expense submitted"
+      },
+      {
+        "type": "http",
+        "url": "/api/expenses",
+        "count": 3
+      },
+      {
+        "type": "http",
+        "url": "/api/expenses",
+        "path": "2.category",
+        "equals": "meals"
+      }
+    ],
+    "submit_expense_methodical": [
+      {
+        "type": "transient",
+        "contains": "Expense submitted"
+      },
+      {
+        "type": "http",
+        "url": "/api/expenses",
+        "count": 3
+      },
+      {
+        "type": "http",
+        "url": "/api/expenses",
+        "path": "2.category",
+        "equals": "meals"
+      }
+    ]
+  },
+  "startedAt": "2026-08-14T23:48:40.857Z",
+  "finishedAt": "2026-08-14T23:53:35.011Z",
+  "runs": [
+    {
+      "runId": "submit_expense_methodical-307e45ff-20260814154840",
+      "scenarioKey": "submit_expense_methodical",
+      "personaKey": "methodical",
+      "subSeed": "555001:submit_expense_methodical:0",
+      "verdict": "PASS",
+      "ending": "done",
+      "discrepancy": false,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": true,
+      "steps": 13,
+      "durationMs": 227656,
+      "observationCounts": {
+        "console_error": 2
+      },
+      "runDir": "runs/submit_expense_methodical-307e45ff-20260814154840"
+    },
+    {
+      "runId": "submit_expense_methodical-c79db42a-20260814154840",
+      "scenarioKey": "submit_expense_methodical",
+      "personaKey": "methodical",
+      "subSeed": "555001:submit_expense_methodical:1",
+      "verdict": "FAIL",
+      "ending": "done",
+      "discrepancy": true,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 9,
+      "durationMs": 65520,
+      "observationCounts": {
+        "console_error": 2
+      },
+      "runDir": "runs/submit_expense_methodical-c79db42a-20260814154840",
+      "failureKind": "assertion"
+    }
+  ],
+  "totals": {
+    "total": 2,
+    "passed": 1,
+    "failed": 1,
+    "setupFailed": 0,
+    "discrepancies": 1,
+    "reverseDiscrepancies": 0,
+    "passedWithObservations": 1,
+    "byFailureKind": {
+      "assertion": 1
+    }
+  }
+}

@@ -1,0 +1,140 @@
+{
+  "formatVersion": 1,
+  "appbacktestVersion": "0.1.0",
+  "app": {
+    "name": "Cove Expenses",
+    "url": "http://localhost:4174"
+  },
+  "seed": "604122",
+  "configHash": "9661a957ca0dc8d93bb32c793b2a8fd10d67ee3c4a569e0e3ef3ef81c1963c0e",
+  "checksByScenario": {
+    "submit_expense": [
+      {
+        "type": "transient",
+        "contains": "Expense submitted"
+      },
+      {
+        "type": "http",
+        "url": "/api/expenses",
+        "count": 3
+      },
+      {
+        "type": "http",
+        "url": "/api/expenses",
+        "path": "2.category",
+        "equals": "meals"
+      }
+    ],
+    "submit_expense_methodical": [
+      {
+        "type": "transient",
+        "contains": "Expense submitted"
+      },
+      {
+        "type": "http",
+        "url": "/api/expenses",
+        "count": 3
+      },
+      {
+        "type": "http",
+        "url": "/api/expenses",
+        "path": "2.category",
+        "equals": "meals"
+      }
+    ]
+  },
+  "startedAt": "2026-08-14T23:10:34.277Z",
+  "finishedAt": "2026-08-14T23:35:08.748Z",
+  "runs": [
+    {
+      "runId": "submit_expense-7989bf5b-20260814151033",
+      "scenarioKey": "submit_expense",
+      "personaKey": "employee",
+      "subSeed": "604122:submit_expense:0",
+      "verdict": "PASS",
+      "ending": "gave_up",
+      "discrepancy": false,
+      "reverseDiscrepancy": true,
+      "passedWithObservations": true,
+      "steps": 19,
+      "durationMs": 445089,
+      "observationCounts": {
+        "action_error": 1,
+        "console_error": 1,
+        "http_error": 1,
+        "gave_up": 1
+      },
+      "runDir": "runs/submit_expense-7989bf5b-20260814151033"
+    },
+    {
+      "runId": "submit_expense-d3a10418-20260814151033",
+      "scenarioKey": "submit_expense",
+      "personaKey": "employee",
+      "subSeed": "604122:submit_expense:1",
+      "verdict": "PASS",
+      "ending": "max_steps",
+      "discrepancy": false,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": true,
+      "steps": 20,
+      "durationMs": 319243,
+      "observationCounts": {
+        "action_error": 1,
+        "console_error": 1,
+        "http_error": 1,
+        "max_steps": 1
+      },
+      "runDir": "runs/submit_expense-d3a10418-20260814151033"
+    },
+    {
+      "runId": "submit_expense_methodical-a0a6ab05-20260814151033",
+      "scenarioKey": "submit_expense_methodical",
+      "personaKey": "methodical",
+      "subSeed": "604122:submit_expense_methodical:0",
+      "verdict": "FAIL",
+      "ending": "gave_up",
+      "discrepancy": false,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 16,
+      "durationMs": 276420,
+      "observationCounts": {
+        "dialog_auto_handled": 1,
+        "gave_up": 1
+      },
+      "runDir": "runs/submit_expense_methodical-a0a6ab05-20260814151033",
+      "failureKind": "check_error"
+    },
+    {
+      "runId": "submit_expense_methodical-a37ce0ab-20260814151033",
+      "scenarioKey": "submit_expense_methodical",
+      "personaKey": "methodical",
+      "subSeed": "604122:submit_expense_methodical:1",
+      "verdict": "FAIL",
+      "ending": "gave_up",
+      "discrepancy": false,
+      "reverseDiscrepancy": false,
+      "passedWithObservations": false,
+      "steps": 19,
+      "durationMs": 432130,
+      "observationCounts": {
+        "gave_up": 1
+      },
+      "runDir": "runs/submit_expense_methodical-a37ce0ab-20260814151033",
+      "failureKind": "assertion"
+    }
+  ],
+  "totals": {
+    "total": 4,
+    "passed": 2,
+    "failed": 2,
+    "setupFailed": 0,
+    "discrepancies": 0,
+    "reverseDiscrepancies": 1,
+    "passedWithObservations": 2,
+    "byFailureKind": {
+      "check_error": 1,
+      "assertion": 1
+    }
+  }
+}
