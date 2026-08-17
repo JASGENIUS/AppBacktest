@@ -150,8 +150,12 @@ export type ProviderConfig =
       type: "anthropic";
       /** Anthropic model id. Default: claude-opus-5. */
       model?: string;
-      /** Reasoning effort for decision calls. Default: "low". */
-      effort?: "low" | "medium" | "high";
+      /**
+       * Reasoning effort for decision calls. Default: "low" — a simulated user
+       * picking their next click is not a reasoning-heavy task, and effort is
+       * the main cost lever in a run.
+       */
+      effort?: "low" | "medium" | "high" | "xhigh" | "max";
     }
   | {
       /**
@@ -502,7 +506,7 @@ export interface RunRecord {
   personaKey: string;
   goal: string;
   world: { persona: ResolvedPersona };
-  provider: { type: string; model?: string };
+  provider: { type: string; model?: string; usage?: ProviderUsage };
   app: { name: string; url: string };
   /** sha256 of normalized config+checks — tamper-EVIDENCE (see DESIGN.md §trust). */
   configHash: string;
@@ -697,9 +701,28 @@ export interface DecideContext {
   perception: Perception;
 }
 
+/**
+ * Token accounting for paid providers. Deliberately raw counts, never dollars:
+ * prices change and vary by model, so the record stays true forever and the
+ * reporter does the arithmetic at display time.
+ */
+export interface ProviderUsage {
+  /** Billable decision calls, including corrective retries. */
+  calls: number;
+  inputTokens: number;
+  outputTokens: number;
+  /** Cached-read input, billed at a discount. Subset of inputTokens' cost basis. */
+  cacheReadTokens?: number;
+}
+
 export interface AgentProvider {
   readonly name: string;
   decide(ctx: DecideContext): Promise<AgentAction>;
+  /**
+   * Cumulative usage so far, if the provider meters it. Read after a run;
+   * providers that cost nothing (fixture) simply omit this.
+   */
+  readonly usage?: ProviderUsage;
 }
 
 // ---------------------------------------------------------------------------
@@ -834,6 +857,8 @@ export interface BacktestReport {
     byFailureKind: Partial<Record<FailureKind, number>>;
     /** Actions the simulated users performed across the session. */
     actions: number;
+    /** What the session cost in tokens. Absent when no provider bills. */
+    usage?: ProviderUsage;
   };
   /** Categorised interpretation of the evidence — problems first. */
   findings: Finding[];

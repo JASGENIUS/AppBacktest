@@ -23,6 +23,7 @@ import type {
   DriverOptions,
   EngineEvents,
   HistoryEntry,
+  ProviderUsage,
   ResolvedActor,
   RngLike,
   RunEnding,
@@ -127,7 +128,10 @@ async function executeConcurrentRun(
   plan: RunPlan,
   deps: RunDeps,
   runDirAbs: string,
-  finish: (partial: Pick<RunRecord, "steps" | "observations" | "evaluation">) => RunRecord,
+  finish: (
+    partial: Pick<RunRecord, "steps" | "observations" | "evaluation">,
+    usageFrom?: AgentProvider[],
+  ) => RunRecord,
 ): Promise<RunRecord> {
   const { config } = deps;
   const actorPlans = plan.actors ?? [];
@@ -320,30 +324,54 @@ async function executeConcurrentRun(
           };
 
     const observations = deriveObservations(steps, ending, config.observers);
-    return finish({
-      steps,
-      observations,
-      evaluation: evaluate({ checkResults, ending, belief, observations, setupFailed: false }),
-    });
+    return finish(
+      {
+        steps,
+        observations,
+        evaluation: evaluate({ checkResults, ending, belief, observations, setupFailed: false }),
+      },
+      states.map((s) => s.provider),
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     const observations = deriveObservations(steps, "fatal", config.observers);
     observations.unshift({ kind: "action_error", severity: "error", message });
-    return finish({
-      steps,
-      observations,
-      evaluation: evaluate({
-        checkResults: [],
-        ending: "fatal",
-        belief: null,
+    return finish(
+      {
+        steps,
         observations,
-        setupFailed: false,
-        fatalError: message,
-      }),
-    });
+        evaluation: evaluate({
+          checkResults: [],
+          ending: "fatal",
+          belief: null,
+          observations,
+          setupFailed: false,
+          fatalError: message,
+        }),
+      },
+      states.map((s) => s.provider),
+    );
   } finally {
     for (const s of states) await s.driver.close().catch(() => {});
   }
+}
+
+/**
+ * Total the token meters of every provider that billed during a run. Returns
+ * undefined for providers that cost nothing (fixture, strict replay) so the
+ * record simply carries no usage rather than a misleading row of zeroes.
+ */
+function sumUsage(providers: AgentProvider[]): ProviderUsage | undefined {
+  const metered = providers.map((p) => p.usage).filter((u): u is ProviderUsage => u !== undefined);
+  if (metered.length === 0) return undefined;
+  const total: ProviderUsage = { calls: 0, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0 };
+  for (const u of metered) {
+    total.calls += u.calls;
+    total.inputTokens += u.inputTokens;
+    total.outputTokens += u.outputTokens;
+    total.cacheReadTokens = (total.cacheReadTokens ?? 0) + (u.cacheReadTokens ?? 0);
+  }
+  return total.calls === 0 ? undefined : total;
 }
 
 export async function executeRun(plan: RunPlan, deps: RunDeps): Promise<RunRecord> {
@@ -375,8 +403,18 @@ export async function executeRun(plan: RunPlan, deps: RunDeps): Promise<RunRecor
     startedAt,
   };
 
-  const finish = (partial: Pick<RunRecord, "steps" | "observations" | "evaluation">): RunRecord => {
-    const record: RunRecord = { ...base, ...partial, finishedAt: new Date().toISOString() };
+  const finish = (
+    partial: Pick<RunRecord, "steps" | "observations" | "evaluation">,
+    // Multi-user runs meter one provider per actor; single-user runs, just the one.
+    usageFrom: AgentProvider[] = [provider],
+  ): RunRecord => {
+    const usage = sumUsage(usageFrom);
+    const record: RunRecord = {
+      ...base,
+      ...partial,
+      ...(usage ? { provider: { ...base.provider, usage } } : {}),
+      finishedAt: new Date().toISOString(),
+    };
     writeRunRecord(record, runDirAbs);
     deps.events?.onRunEnd?.(record);
     return record;

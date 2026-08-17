@@ -30,7 +30,7 @@ const providerSchema = z.discriminatedUnion("type", [
     .object({
       type: z.literal("anthropic"),
       model: z.string().min(1).optional(),
-      effort: z.enum(["low", "medium", "high"]).optional(),
+      effort: z.enum(["low", "medium", "high", "xhigh", "max"]).optional(),
     })
     .strict(),
   z

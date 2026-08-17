@@ -274,6 +274,90 @@ describe("AnthropicProvider", () => {
   });
 });
 
+describe("AnthropicProvider token metering", () => {
+  /** Minimal stand-in for the SDK response we actually read. */
+  function fakeResponse(action: unknown, usage: Record<string, number>) {
+    return {
+      stop_reason: "tool_use",
+      content: [{ type: "tool_use", name: "act", input: { action } }],
+      usage,
+    };
+  }
+
+  function providerWithClient(responses: unknown[]): {
+    provider: AnthropicProvider;
+    calls: number[];
+  } {
+    const provider = new AnthropicProvider();
+    const calls: number[] = [];
+    let i = 0;
+    (provider as unknown as { client: unknown }).client = {
+      messages: {
+        create: async () => {
+          calls.push(i);
+          return responses[i++];
+        },
+      },
+    };
+    return { provider, calls };
+  }
+
+  it("accumulates input, output and cached tokens across decisions", async () => {
+    const { provider } = providerWithClient([
+      fakeResponse({ kind: "click", ref: "f0:e1" }, { input_tokens: 1200, output_tokens: 25 }),
+      fakeResponse(
+        { kind: "done", outcome: "success", summary: "uploaded" },
+        { input_tokens: 1500, output_tokens: 40, cache_read_input_tokens: 900 },
+      ),
+    ]);
+
+    await provider.decide(makeCtx([el("f0:e1", "button", "Upload")]));
+    await provider.decide(makeCtx([el("f0:e1", "button", "Upload")]));
+
+    expect(provider.usage).toEqual({
+      calls: 2,
+      inputTokens: 2700,
+      outputTokens: 65,
+      cacheReadTokens: 900,
+    });
+  });
+
+  it("counts a corrective retry as a billed call, because it was one", async () => {
+    // First response is an invalid action; the provider retries once. Both
+    // round trips cost money and both must show up in the meter.
+    const { provider } = providerWithClient([
+      fakeResponse({ kind: "teleport" }, { input_tokens: 1000, output_tokens: 10 }),
+      fakeResponse({ kind: "give_up", reason: "stuck" }, { input_tokens: 1100, output_tokens: 12 }),
+    ]);
+
+    const action = await provider.decide(makeCtx([el("f0:e1", "button", "Upload")]));
+
+    expect(action.kind).toBe("give_up");
+    expect(provider.usage.calls).toBe(2);
+    expect(provider.usage.inputTokens).toBe(2100);
+  });
+
+  it("tolerates a response with no usage block rather than throwing", async () => {
+    const { provider } = providerWithClient([
+      { stop_reason: "tool_use", content: [{ type: "tool_use", name: "act", input: { action: { kind: "back" } } }] },
+    ]);
+
+    await provider.decide(makeCtx([el("f0:e1", "button", "Upload")]));
+
+    expect(provider.usage).toEqual({
+      calls: 1,
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheReadTokens: 0,
+    });
+  });
+
+  it("leaves the fixture provider unmetered, so free runs report no cost", () => {
+    const fixture = new FixtureProvider(writeFixture([{ kind: "back" }]));
+    expect(fixture.usage).toBeUndefined();
+  });
+});
+
 describe("createProvider", () => {
   it("builds the provider matching cfg.type", () => {
     const fixture = createProvider({ type: "fixture", path: "fixtures/driver.json" });

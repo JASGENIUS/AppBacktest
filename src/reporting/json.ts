@@ -55,6 +55,19 @@ export function buildReport(args: {
   }
 
   totals.actions = records.reduce((n, r) => n + r.steps.length, 0);
+
+  // Session-wide token spend, summed from the per-run meters. Stays absent
+  // entirely when nothing billed, so free providers show no cost row at all.
+  for (const record of records) {
+    const u = record.provider.usage;
+    if (!u) continue;
+    const acc = (totals.usage ??= { calls: 0, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0 });
+    acc.calls += u.calls;
+    acc.inputTokens += u.inputTokens;
+    acc.outputTokens += u.outputTokens;
+    acc.cacheReadTokens = (acc.cacheReadTokens ?? 0) + (u.cacheReadTokens ?? 0);
+  }
+
   const findings = args.findings ?? [];
 
   return {

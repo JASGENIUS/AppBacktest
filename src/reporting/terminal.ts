@@ -143,6 +143,19 @@ export function printReport(report: BacktestReport, outDirAbs: string): void {
   if (kinds.length > 0) {
     console.log(pc.dim(`  failure kinds: ${kinds.map(([k, v]) => `${k}=${v}`).join("  ")}`));
   }
+  if (t.usage) {
+    const k = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
+    const cached =
+      t.usage.cacheReadTokens && t.usage.cacheReadTokens > 0
+        ? `, ${k(t.usage.cacheReadTokens)} cached`
+        : "";
+    console.log(
+      pc.dim(
+        `  tokens: ${k(t.usage.inputTokens)} in / ${k(t.usage.outputTokens)} out${cached}  ` +
+          `across ${t.usage.calls} model call${t.usage.calls === 1 ? "" : "s"}`,
+      ),
+    );
+  }
   console.log(pc.dim(`  report: ${outDirAbs.replace(/\\/g, "/")}/reports/latest.json`));
   console.log(pc.dim("  regressions are the gate: npx appbacktest regression"));
   console.log(pc.bold("─".repeat(60)));

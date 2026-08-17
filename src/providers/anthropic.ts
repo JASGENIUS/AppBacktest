@@ -4,13 +4,13 @@
  * so the module loads (and the provider constructs) without an API key.
  */
 import Anthropic from "@anthropic-ai/sdk";
-import type { AgentAction, AgentProvider, DecideContext } from "../core/types";
+import type { AgentAction, AgentProvider, DecideContext, ProviderUsage } from "../core/types";
 import { actionJsonSchema, parseAction, unwrapActionEnvelope } from "./actionSchema";
 import { buildSystemPrompt, buildUserMessage } from "./prompt";
 
 export interface AnthropicProviderConfig {
   model?: string;
-  effort?: "low" | "medium" | "high";
+  effort?: "low" | "medium" | "high" | "xhigh" | "max";
 }
 
 const DEFAULT_MODEL = "claude-opus-5";
@@ -18,6 +18,8 @@ const DEFAULT_EFFORT = "low";
 
 export class AnthropicProvider implements AgentProvider {
   readonly name = "anthropic";
+  /** Mutated in place as calls complete; the runner reads it once at the end. */
+  readonly usage: ProviderUsage = { calls: 0, inputTokens: 0, outputTokens: 0, cacheReadTokens: 0 };
   private client: Anthropic | null = null;
 
   constructor(private readonly cfg: AnthropicProviderConfig = {}) {}
@@ -94,18 +96,28 @@ export class AnthropicProvider implements AgentProvider {
   private async createMessage(system: string, userText: string): Promise<Anthropic.Message> {
     const client = this.getClient();
     try {
-      return await client.messages.create(this.buildParams(system, userText, true));
+      return this.meter(await client.messages.create(this.buildParams(system, userText, true)));
     } catch (err) {
       if (this.isThinkingRejection(err)) {
         // Some models 400 on any thinking parameter — retry once without it.
         try {
-          return await client.messages.create(this.buildParams(system, userText, false));
+          return this.meter(await client.messages.create(this.buildParams(system, userText, false)));
         } catch (retryErr) {
           throw this.wrapSdkError(retryErr);
         }
       }
       throw this.wrapSdkError(err);
     }
+  }
+
+  /** Every response that reaches us was billed, whether or not we could parse it. */
+  private meter(response: Anthropic.Message): Anthropic.Message {
+    this.usage.calls += 1;
+    this.usage.inputTokens += response.usage?.input_tokens ?? 0;
+    this.usage.outputTokens += response.usage?.output_tokens ?? 0;
+    this.usage.cacheReadTokens =
+      (this.usage.cacheReadTokens ?? 0) + (response.usage?.cache_read_input_tokens ?? 0);
+    return response;
   }
 
   private isThinkingRejection(err: unknown): boolean {
