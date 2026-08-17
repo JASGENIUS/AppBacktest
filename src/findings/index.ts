@@ -106,7 +106,7 @@ function detect(record: RunRecord, timeline: TimelineEntry[]): Draft[] {
               : `Server error ${n.status} on ${n.method} ${pathOf(n.url)}`,
           observed:
             n.status === -1
-              ? `The request ${n.method} ${pathOf(n.url)} never completed while the simulated user was working.`
+              ? `The request ${n.method} ${pathOf(n.url)} never completed while the probe was working.`
               : `${n.method} ${pathOf(n.url)} returned HTTP ${n.status} during the workflow.`,
           expected: "The request should succeed, or the interface should surface a recoverable error.",
           evidence: [`${n.method} ${n.url} → ${n.status === -1 ? "failed" : n.status}`],
@@ -125,7 +125,7 @@ function detect(record: RunRecord, timeline: TimelineEntry[]): Draft[] {
         severity: "high",
         baseConfidence: 0.85,
         title: `Uncaught exception: ${c.text.replace(/^pageerror:\s*/, "").slice(0, 70)}`,
-        observed: `The page threw an uncaught exception while the simulated user was interacting with it.`,
+        observed: `The page threw an uncaught exception while the probe was interacting with it.`,
         expected: "The interaction should not raise an unhandled error.",
         evidence: [c.text],
         atMs: c.atMs !== undefined ? c.atMs - base : offsetOfStep(record, step.index),
@@ -143,7 +143,7 @@ function detect(record: RunRecord, timeline: TimelineEntry[]): Draft[] {
       baseConfidence: 0.95,
       title: `Application reported success but state disagrees (${scenario})`,
       observed:
-        `The simulated user completed the workflow and believed it succeeded` +
+        `The probe completed the workflow and believed it succeeded` +
         (ev.agentBelief ? ` (“${ev.agentBelief.summary.slice(0, 120)}”)` : "") +
         `, but verification of the application's own state failed.`,
       expected: "What the interface reports and what the application stores should agree.",

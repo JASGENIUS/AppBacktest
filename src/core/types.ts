@@ -151,8 +151,8 @@ export type ProviderConfig =
       /** Anthropic model id. Default: claude-opus-5. */
       model?: string;
       /**
-       * Reasoning effort for decision calls. Default: "low" — a simulated user
-       * picking their next click is not a reasoning-heavy task, and effort is
+       * Reasoning effort for decision calls. Default: "low" — a probe
+       * picking its next click is not a reasoning-heavy task, and effort is
        * the main cost lever in a run.
        */
       effort?: "low" | "medium" | "high" | "xhigh" | "max";
@@ -413,7 +413,7 @@ export interface StepRecord {
   incidents: IncidentDrain;
   result: StepResult;
   /**
-   * The page as the simulated user SAW it, before deciding. POSIX-style path
+   * The page as the probe SAW it, before deciding. POSIX-style path
    * relative to the run directory.
    */
   screenshot?: string;
@@ -493,7 +493,7 @@ export interface Evaluation {
 }
 
 // ---------------------------------------------------------------------------
-// RunRecord — one simulated user's complete, self-contained, replayable history
+// RunRecord — one probe's complete, self-contained, replayable history
 // ---------------------------------------------------------------------------
 
 export type ReplayOutcome = "REPRODUCED" | "FIXED" | "DIVERGED" | "INCONCLUSIVE";
@@ -536,7 +536,7 @@ export interface RunRecord {
 // ---------------------------------------------------------------------------
 // Timeline & replay evidence
 //
-// The timeline is DERIVED from a RunRecord — actions the simulated user took
+// The timeline is DERIVED from a RunRecord — actions the probe took
 // interleaved with events the application produced, on one clock. It is what
 // a human scrubs through when answering "show me exactly what happened".
 // ---------------------------------------------------------------------------
@@ -745,7 +745,7 @@ export interface DriverOptions {
   actionTimeoutMs: number;
   /**
    * Watch mode: slow the run down and draw a cursor + HUD so a human can see
-   * what the simulated user is doing. Presentation only — the overlay is
+   * what the probe is doing. Presentation only — the overlay is
    * excluded from perception and cannot intercept pointer events.
    */
   watch?: boolean;
@@ -864,7 +864,7 @@ export interface BacktestReport {
     reverseDiscrepancies: number;
     passedWithObservations: number;
     byFailureKind: Partial<Record<FailureKind, number>>;
-    /** Actions the simulated users performed across the session. */
+    /** Actions the probes performed across the session. */
     actions: number;
     /** What the session cost in tokens. Absent when no provider bills. */
     usage?: ProviderUsage;

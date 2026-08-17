@@ -9,7 +9,7 @@ import { join } from "node:path";
 import pc from "picocolors";
 
 const CONFIG_TEMPLATE = `# AppBacktest configuration — https://github.com/jasroopsangha/appbacktest
-# AI-simulated users pursue goals through your real UI; deterministic checks
+# Probes (AI-simulated users) pursue goals through your real UI; deterministic checks
 # verify what actually happened; failures become replayable regressions.
 
 app:

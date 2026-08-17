@@ -27,7 +27,7 @@ import { initProject } from "./init";
 const program = new Command();
 program
   .name("appbacktest")
-  .description("Backtesting for applications: AI-simulated users, deterministic verification, replayable failures.")
+  .description("Backtesting for applications: AI probes, deterministic verification, replayable failures.")
   .version(appbacktestVersion);
 
 function die(err: unknown): never {
@@ -57,7 +57,7 @@ program
   .option("--seed <seed>", "world seed (default: random, printed)")
   .option("--scenario <name>", "run a single scenario")
   .option("--headed", "show the browser window", false)
-  .option("--watch", "watch the simulated user: visible browser, slowed down, cursor + HUD", false)
+  .option("--watch", "watch the probe: visible browser, slowed down, cursor + HUD", false)
   .action(async (opts: { config: string; seed?: string; scenario?: string; headed: boolean; watch: boolean }) => {
     try {
       const seed = opts.seed ?? String(Math.floor(Math.random() * 900000) + 100000);

@@ -106,7 +106,7 @@ const scenarioSchema = z
   })
   .strict()
   .superRefine((s, ctx) => {
-    // Exactly one shape: a single simulated user, or several concurrent ones.
+    // Exactly one shape: a single probe, or several concurrent ones.
     if (s.concurrent) {
       if (s.persona !== undefined || s.goal !== undefined) {
         ctx.addIssue({

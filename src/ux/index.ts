@@ -99,7 +99,7 @@ function createdButNotVisible(record: RunRecord): Signal | null {
     key: "ux:created-not-visible",
     title: "Saved content is hard to find afterwards",
     observed:
-      `The simulated user entered “${content.text.slice(0, 60)}” and the application confirmed it with ` +
+      `The probe entered “${content.text.slice(0, 60)}” and the application confirmed it with ` +
       `“${confirmed.text}”. Continuing to use the application, that content was not visible on any screen ` +
       `the user reached afterwards.`,
     userImpact:
@@ -181,7 +181,7 @@ function isHarnessFailure(reason: string): boolean {
 function succeededButUserUnsure(record: RunRecord): Signal | null {
   const ev = record.evaluation;
   if (!ev.reverseDiscrepancy) return null;
-  // If the simulated user stopped because the model or the harness broke, the
+  // If the probe stopped because the model or the harness broke, the
   // application's clarity is not what we observed. Never blame the app for it.
   const last = record.steps[record.steps.length - 1];
   if (last?.action.kind === "give_up" && isHarnessFailure(last.action.reason)) return null;
@@ -190,7 +190,7 @@ function succeededButUserUnsure(record: RunRecord): Signal | null {
     key: "ux:unclear-success",
     title: "Workflow succeeded but the user could not tell",
     observed:
-      `Every verification of the application's state passed, yet the simulated user ended the workflow ` +
+      `Every verification of the application's state passed, yet the probe ended the workflow ` +
       `believing it had not worked` +
       (ev.agentBelief ? ` (“${ev.agentBelief.summary.slice(0, 120)}”)` : "") +
       `.`,

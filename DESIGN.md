@@ -1,6 +1,6 @@
 # AppBacktest — Design Document
 
-> Backtesting, but for software applications. AI-simulated users pursue goals
+> Backtesting, but for software applications. Probes (AI-simulated users) pursue goals
 > through your real UI; deterministic code verifies what actually happened;
 > seeded worlds make failures replayable regressions.
 

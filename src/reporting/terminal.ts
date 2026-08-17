@@ -101,7 +101,7 @@ export function printRunEnd(record: RunRecord): void {
     console.log(
       ev.ending === "max_steps"
         ? pc.yellow(
-            "  ◀ PASSED WITHOUT FINISHING: the simulated user ran out of steps before completing the task, " +
+            "  ◀ PASSED WITHOUT FINISHING: the probe ran out of steps before completing the task, " +
               "yet every check passed — the checks are probably too weak to be measuring this workflow.",
           )
         : pc.yellow("  ◀ REVERSE DISCREPANCY: the agent thought it failed, but every check passed (usability signal)."),

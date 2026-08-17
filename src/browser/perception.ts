@@ -235,7 +235,7 @@ export const FILE_INPUT_SOURCE = `((sel) => {
  *
  * This runs in EVERY run, not just watch mode, because the cursor is what
  * makes a replay legible — without it a screenshot cannot show which control
- * the simulated user actually hit. Watch mode adds the HUD and the glide
+ * the probe actually hit. Watch mode adds the HUD and the glide
  * animation on top (signalled by window.__abt_hud_goal being defined).
  *
  * Everything here is marked data-abt-ui (excluded from perception) and

@@ -2,18 +2,18 @@
 
 **Backtesting, but for software applications.**
 
-AI-simulated users pursue goals through your real UI. Deterministic code
-verifies what actually happened. Every discovered failure becomes a
-replayable regression.
+**Probes** — AI-simulated users — pursue goals through your real UI.
+Deterministic code verifies what actually happened. Every discovered failure
+becomes a replayable regression.
 
 ```
-Actor: driver          Goal: Upload proof of delivery for load #38419
+Probe: driver          Goal: Upload proof of delivery for load #38419
 ```
 
-The simulated user figures out the flow itself — dashboard → find the load →
-choose a photo → upload → read the confirmation. It double-clicks when it's
-impatient. And when it proudly reports success, **AppBacktest doesn't believe
-it**:
+A probe gets a persona and a goal, then figures out the flow itself —
+dashboard → find the load → choose a photo → upload → read the confirmation.
+It double-clicks when it's impatient. And when it proudly reports success,
+**AppBacktest doesn't believe it**:
 
 ```
 ▶ pod_upload [driver] sub-seed 555001:pod_upload:1
@@ -98,7 +98,7 @@ npx appbacktest run --watch
 ```
 
 Opens a real Chrome window, slows the run to human speed, and draws a cursor
-that glides to whatever the simulated user is about to click — with a bar
+that glides to whatever the probe is about to click — with a bar
 along the bottom showing the goal, the step number, and the current action
 (including "thinking about the next step…" while the model decides).
 
@@ -113,7 +113,7 @@ window without the overlay.
 ### Multi-user scenarios
 
 Some bugs only exist when two people use the app at once. A scenario can run
-several simulated users together, each in their own browser context with their
+several probes together, each in their own browser context with their
 own session and cookies:
 
 ```yaml
@@ -441,10 +441,19 @@ went through, and why each of these is sequenced where it is.
 
 ```bash
 npm install && npx playwright install chromium
-npm test          # 95 tests: seeded rng, config, worldgen, evaluators,
+npm test          # 147 tests: seeded rng, config, worldgen, evaluators,
                   # observers, providers, engine replay semantics, real-chromium
                   # driver smoke, demo-app bug/fix behavior
 npm run build
+
+node scripts/verify-features.mjs   # every feature end to end against the
+                                   # example apps — offline, no API key, free
 ```
 
-Apache License 2.0 © Jasroop Sangha
+## License
+
+Apache License 2.0 © Jasroop Sangha. See [LICENSE](LICENSE).
+
+Apache 2.0 grants an explicit patent license and requires changed files to be
+marked — chosen over MIT so that anyone adopting this in a company can do so
+without a legal review.

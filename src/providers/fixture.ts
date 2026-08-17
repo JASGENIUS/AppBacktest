@@ -55,7 +55,7 @@ export class FixtureProvider implements AgentProvider {
    * Lazy read on first decide; relative paths resolve against process.cwd().
    *
    * Two shapes are accepted:
-   *   {"decisions": [...]}                      — one simulated user
+   *   {"decisions": [...]}                      — one probe
    *   {"actors": {"name": {"decisions": [...]}}} — one list per concurrent actor
    */
   private load(actorName?: string): unknown[] {
