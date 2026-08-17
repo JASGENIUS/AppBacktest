@@ -417,7 +417,7 @@ group("Multi-user (concurrent) scenarios");
 const SUPPORT = "examples/support-app/appbacktest.concurrent.yaml";
 const SUPPORT_OUT = join(ROOT, "examples/support-app/.backtests");
 
-check("two simulated users interleave on a seeded schedule", () => {
+check("two probes interleave on a seeded schedule", () => {
   rmSync(join(SUPPORT_OUT, "runs"), { recursive: true, force: true });
   const r = cli(["run", "--config", SUPPORT, "--seed", "606060"]);
   assert(r.code > 0, `expected the lost update to fail the run, exit ${r.code}`);

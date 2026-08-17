@@ -279,7 +279,7 @@ export const WATCH_OVERLAY_SOURCE = `(() => {
     const clamp = "white-space:nowrap;overflow:hidden;text-overflow:ellipsis";
     hud.innerHTML =
       '<div style="opacity:.55;font-size:10px;letter-spacing:.10em;text-transform:uppercase">' +
-      'AppBacktest &middot; simulated user <span id="__abt_step"></span></div>' +
+      'AppBacktest &middot; probe <span id="__abt_step"></span></div>' +
       '<div id="__abt_goal" style="opacity:.7;margin-top:1px;font-size:12px;' + clamp + '"></div>' +
       '<div id="__abt_act" style="margin-top:3px;font-weight:600;' + clamp + '">starting up&hellip;</div>';
     document.body.appendChild(hud);
