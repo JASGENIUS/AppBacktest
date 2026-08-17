@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "appbacktestVersion": "0.1.0",
-  "runId": "pod_upload-3fe9d0eb-20260817025144",
+  "runId": "pod_upload-3fe9d0eb-20260817124755",
   "seed": "555001",
   "subSeed": "555001:pod_upload:1",
   "scenarioKey": "pod_upload",
@@ -43,7 +43,7 @@
       "count": 1
     }
   ],
-  "startedAt": "2026-08-17T10:51:50.135Z",
+  "startedAt": "2026-08-17T20:48:01.219Z",
   "steps": [
     {
       "index": 0,
@@ -78,8 +78,8 @@
       },
       "screenshot": "steps/000.png",
       "screenshotAfter": "steps/000-act.png",
-      "tsStart": "2026-08-17T10:51:50.631Z",
-      "tsEnd": "2026-08-17T10:51:50.783Z"
+      "tsStart": "2026-08-17T20:48:01.735Z",
+      "tsEnd": "2026-08-17T20:48:01.902Z"
     },
     {
       "index": 1,
@@ -116,8 +116,8 @@
       },
       "screenshot": "steps/001.png",
       "screenshotAfter": "steps/001-act.png",
-      "tsStart": "2026-08-17T10:51:50.783Z",
-      "tsEnd": "2026-08-17T10:51:51.315Z"
+      "tsStart": "2026-08-17T20:48:01.902Z",
+      "tsEnd": "2026-08-17T20:48:02.434Z"
     },
     {
       "index": 2,
@@ -153,12 +153,12 @@
       },
       "screenshot": "steps/002.png",
       "screenshotAfter": "steps/002-act.png",
-      "tsStart": "2026-08-17T10:51:51.315Z",
-      "tsEnd": "2026-08-17T10:51:51.382Z"
+      "tsStart": "2026-08-17T20:48:02.434Z",
+      "tsEnd": "2026-08-17T20:48:02.503Z"
     },
     {
       "index": 3,
-      "elapsedMs": 1,
+      "elapsedMs": 0,
       "preUrl": "http://localhost:4173/loads/38419",
       "perceptionDigest": "62ab739c58adf54555bfef45b6f977acd3b01c3ed71c1c4870c02c48618ab649",
       "perception": {
@@ -193,8 +193,8 @@
       },
       "screenshot": "steps/003.png",
       "screenshotAfter": "steps/003-act.png",
-      "tsStart": "2026-08-17T10:51:51.383Z",
-      "tsEnd": "2026-08-17T10:51:51.766Z"
+      "tsStart": "2026-08-17T20:48:02.503Z",
+      "tsEnd": "2026-08-17T20:48:02.885Z"
     },
     {
       "index": 4,
@@ -219,7 +219,7 @@
         "transientEvents": [
           {
             "text": "Upload received",
-            "atMs": 1786963912133
+            "atMs": 1786999683255
           }
         ],
         "dialogs": [],
@@ -231,12 +231,12 @@
       },
       "screenshot": "steps/004.png",
       "screenshotAfter": "steps/004-act.png",
-      "tsStart": "2026-08-17T10:51:51.766Z",
-      "tsEnd": "2026-08-17T10:51:53.350Z"
+      "tsStart": "2026-08-17T20:48:02.885Z",
+      "tsEnd": "2026-08-17T20:48:04.451Z"
     },
     {
       "index": 5,
-      "elapsedMs": 1,
+      "elapsedMs": 0,
       "preUrl": "http://localhost:4173/loads/38419",
       "perceptionDigest": "62ab739c58adf54555bfef45b6f977acd3b01c3ed71c1c4870c02c48618ab649",
       "perception": {
@@ -263,8 +263,8 @@
       },
       "screenshot": "steps/005.png",
       "screenshotAfter": "steps/005-act.png",
-      "tsStart": "2026-08-17T10:51:53.350Z",
-      "tsEnd": "2026-08-17T10:51:53.417Z"
+      "tsStart": "2026-08-17T20:48:04.451Z",
+      "tsEnd": "2026-08-17T20:48:04.518Z"
     }
   ],
   "observations": [],
@@ -304,7 +304,7 @@
         },
         "passed": false,
         "errored": false,
-        "actual": "[{\"at\":\"2026-08-17T10:51:52.129Z\",\"atMs\":1786963912129,\"bytes\":409600,\"filename\":\"upload.png\",\"id\":1,\"notes\":\"Delivered to dock 4\"},{\"at\":\"2026-08-17T10:51:52.130Z\",\"atMs\":1786963912130,\"bytes\":409600,\"filename\":\"upload.png\",\"id\":2,\"notes\":\"Delivered to dock 4\"}]",
+        "actual": "[{\"at\":\"2026-08-17T20:48:03.252Z\",\"atMs\":1786999683252,\"bytes\":409600,\"filename\":\"upload.png\",\"id\":1,\"notes\":\"Delivered to dock 4\"},{\"at\":\"2026-08-17T20:48:03.252Z\",\"atMs\":1786999683252,\"bytes\":409600,\"filename\":\"upload.png\",\"id\":2,\"notes\":\"Delivered to dock 4\"}]",
         "detail": "expected count 1, got 2",
         "attempts": 9
       }
@@ -317,5 +317,5 @@
     "reverseDiscrepancy": false,
     "passedWithObservations": false
   },
-  "finishedAt": "2026-08-17T10:51:58.754Z"
+  "finishedAt": "2026-08-17T20:48:09.847Z"
 }

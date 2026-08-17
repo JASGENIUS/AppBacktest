@@ -215,8 +215,13 @@ export function rebuildReport(configPath: string): string {
 /** Source correlation is read-only and opt-in; resolve its root against the config dir. */
 function resolveSourceConfig(config: AppBacktestConfig, configDir: string): SourceConfig {
   const src = config.source;
-  if (!src.enabled || !src.root) return src;
-  return { ...src, root: isAbsolute(src.root) ? src.root : resolve(configDir, src.root) };
+  if (!src.enabled) return src;
+  // `source: { enabled: true }` with no root used to be a silent no-op: the
+  // correlator bails without a root, so the user asked for code locations and
+  // got nothing, with no error. Default to the config's own directory, which
+  // is what enabling it plainly means.
+  const root = src.root ?? configDir;
+  return { ...src, root: isAbsolute(root) ? root : resolve(configDir, root) };
 }
 
 export async function replayById(args: {

@@ -1,5 +1,7 @@
 # AppBacktest — Design Document
 
+[← README](README.md) · [Install](README.md#install) · [Use it manually](README.md#use-it-manually) · [Use it with your AI agent](README.md#use-it-with-your-ai-agent) · [The agent prompt](docs/AI-AGENTS.md)
+
 > Backtesting, but for software applications. Probes (AI-simulated users) pursue goals
 > through your real UI; deterministic code verifies what actually happened;
 > seeded worlds make failures replayable regressions.

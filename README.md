@@ -40,6 +40,15 @@ what the UI claims, what the user believes, and what actually happened — is
 where the interesting bugs live, and it's exactly what scripted E2E tests
 cannot see.
 
+## Start here
+
+|  | |
+|---|---|
+| **[Install](#install)** | three commands, no API key |
+| **[Use it manually](#use-it-manually)** | write a goal, run it, read the report |
+| **[Use it with your AI agent](#use-it-with-your-ai-agent)** | let your coding agent find and fix its own bugs |
+| **[The agent prompt](#the-agent-prompt)** | copy-paste, for Claude Code / Cursor / Codex |
+
 ## The idea
 
 | | Scripted E2E | AppBacktest |
@@ -58,7 +67,9 @@ AppBacktest complements unit / integration / scripted E2E testing — its
 specialty is simulation, discovery, and turning what it discovers into
 regressions.
 
-## Quickstart (zero API keys)
+## Install
+
+Nothing here needs an API key.
 
 ```bash
 git clone https://github.com/JASGENIUS/AppBacktest
@@ -66,6 +77,12 @@ cd AppBacktest && npm install
 npx playwright install chromium   # ~130MB, one time
 npm run demo                      # ← the full loop, deterministic, no keys
 ```
+
+To use it on your own project instead, see
+[Using it on your app](#using-it-on-your-app) — `npx appbacktest init`
+scaffolds the config, the artifact tree, and the right gitignore split.
+
+## Use it manually
 
 `npm run demo` backtests the bundled PODHaul app (which ships with a planted
 double-submit bug) using the **fixture provider** — recorded decisions, so it
@@ -280,6 +297,115 @@ Nemotron-3-Super discovered the planted bug in its own way — it re-clicked
 created **three** POD records, and confidently reported success. The state
 check disagreed. That's the product.
 
+## Use it with your AI agent
+
+AppBacktest is a plain CLI that writes JSON, so Claude Code, Cursor or Codex
+can drive it directly:
+
+```
+implement  →  appbacktest run  →  read reports/latest.json  →  fix the APP
+                    ↑                                              │
+                    └──────────────  appbacktest regression  ←─────┘
+```
+
+The point is the **trust boundary**. An agent grading its own work is a bad
+idea, because the same reasoning that wrote the bug decides whether the bug
+exists. AppBacktest splits that: the LLM decides what a person would *do*, and
+deterministic code decides what actually *happened*. Your agent never issues
+the verdict — it just gets told, with evidence, that it is wrong.
+
+What the agent reads out of `.backtests/reports/latest.json`:
+
+| Field | Use |
+|---|---|
+| `totals.discrepancies` | the interface reported success while state disagreed — highest signal in the file |
+| `findings[]` | one entry per defect, already sorted problems-first |
+| `findings[].category` | `critical_failure` first; usability and QoL are suggestions, not defects |
+| `findings[].reproduction` | the exact action trail |
+| `findings[].evidence` | verbatim check, network and console lines |
+| `findings[].codeRefs` | candidate source locations — needs `source: { enabled: true }` |
+| `findings[].reproducedIn` | `"7 / 20 attempts"` — flakiness at a glance |
+
+Exit codes are designed for automation: `run` exits with the number of failed
+runs, `regression` with the number of fixtures still reproducing. Non-zero
+means *found something*, not *tool broke*.
+
+**Anti-gaming, stated honestly.** Reports embed the check definitions verbatim
+plus a config hash, so an agent that loosens a check to go green leaves it in
+the PR diff. `.backtests/regressions/` is committed and reviewed like source.
+`FIXED` requires positive evidence, and `DIVERGED` fails the gate rather than
+passing quietly. The remaining hole: an agent that controls the app can still
+make the app's own state endpoint lie, since `http` checks trust it as oracle.
+An independent DB oracle is on the roadmap; code review is the enforcement
+point until then.
+
+## The agent prompt
+
+Copy this into your coding agent. Fill in the two bracketed lines.
+Full version, with the reasoning behind each rule:
+**[docs/AI-AGENTS.md](docs/AI-AGENTS.md)**.
+
+````markdown
+You have AppBacktest available: a CLI that sends AI-simulated users ("probes")
+through a real browser against a running app, then verifies what actually
+happened with deterministic checks. Use it to find and fix real bugs.
+
+Project: [describe the app, e.g. "Next.js expense tracker in ./web"]
+Start it with: [e.g. "npm run dev", serving http://localhost:3000]
+
+## How to work
+
+1. Make sure `appbacktest.yaml` exists. If not, run `npx appbacktest init` and
+   fill it in: point `app.url` at the running app, and write scenarios as a
+   plain-English `goal` plus `checks` that verify real state. Prefer `http`
+   checks against an API endpoint over `text` checks against the DOM — the UI
+   is exactly what might be lying.
+2. Run `npx appbacktest run`. A non-zero exit means it found failures; that is
+   the tool working, not the tool breaking.
+3. Read `.backtests/reports/latest.json`. Work `findings[]` in order — it is
+   already sorted problems-first. Use `reproduction` for the path and
+   `evidence` for the verbatim failure. For candidate source locations, set
+   `source: { enabled: true }` in the config — `codeRefs` is empty otherwise.
+4. Fix the application code. Then re-run to confirm.
+5. For each genuine bug you fixed, keep it fixed:
+   `npx appbacktest promote <runId>` then `npx appbacktest regression`.
+   The gate must print `✓ FIXED` and exit 0. That replay uses no LLM at all,
+   so it is evidence rather than an opinion.
+
+## Rules you must not break
+
+- **Never edit a check, a goal, or a persona to make a run pass.** That is
+  deleting the evidence, not fixing the bug. If you believe a check is
+  genuinely wrong, stop and say so with your reasoning — do not quietly
+  change it.
+- **Never edit anything under `.backtests/regressions/`.** That directory is
+  the committed failure library; rewriting it forges a green build.
+- **Fix the app, never the report.** AppBacktest does not modify source by
+  design, so every source change is yours and is reviewed as yours.
+- **A probe's opinion is not evidence.** `done(success)` is recorded and never
+  trusted. Only the deterministic checks decide pass or fail.
+- **Treat `category: "critical_failure"` findings first.** Those are the runs
+  where `runs[].discrepancy` is true: the interface reported success while
+  stored state disagreed, so a user was told something untrue. Fix the state
+  bug, not the wording.
+- **If a replay reports `DIVERGED`, do not force it.** The UI changed too much
+  to replay the old trace. Re-simulate with
+  `npx appbacktest run --seed <seed>` and promote a fresh failure.
+- **Do not weaken a scenario to make it terminate.** If a probe runs out of
+  steps, the workflow is probably genuinely too long or too confusing — that
+  is a finding about the app, and worth reporting as one.
+
+## What to report back
+
+For each finding: what broke, the root cause in the code, the fix, and the
+`regression` output proving it. Keep the report's categories separate —
+functional bugs are defects; usability and quality-of-life findings are
+evidence-backed suggestions, not bugs.
+
+If you could not fix something, say so plainly and leave the promoted fixture
+in place so the gate stays red.
+````
+
 ## Using it on your app
 
 ```bash
@@ -399,23 +525,9 @@ Two layers of determinism, honestly separated:
    the originally-failing check must flip. Anything less is `DIVERGED`, which
    fails the gate — a UI refactor can't quietly diverge your fixtures green.
 
-## For AI coding agents
-
-AppBacktest is a plain CLI + JSON reports, so Claude Code / Codex / Cursor
-can drive it directly: implement a feature → `appbacktest run` → read
-`.backtests/reports/latest.json` → investigate the evidence bundle → fix →
-`appbacktest replay <id>` → `appbacktest regression`.
-
-Anti-gaming is stated honestly: reports embed the check definitions verbatim
-and a config hash, so evaluator edits are **visible in PR diffs** — that plus
-a committed `.backtests/regressions/` under code review is the enforcement
-point. (An agent that controls the app can still make the app's own state
-endpoint lie; the independent DB oracle is on the roadmap. We don't claim
-otherwise.)
-
 ## Honest limitations (v0.1)
 
-- Chromium only; single actor per run (no concurrent multi-user simulation yet).
+- Chromium only.
 - Perception blind spots: closed shadow DOM, canvas UIs, virtualized lists,
   drag-and-drop.
 - Network fault injection (latency/drops/offline) was deliberately cut from
