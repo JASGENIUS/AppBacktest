@@ -79,10 +79,20 @@ and replays from already-recorded runs with no app, no browser and no model.
 
 ---
 
+## If your agent is Claude, install the skill instead
+
+```bash
+git clone https://github.com/JASGENIUS/appbacktest-skill
+cp -r appbacktest-skill/skills/appbacktest ~/.claude/skills/
+```
+
+It carries everything below plus a triage script, and Claude reaches for it on
+its own — no pasting, and it stays current when the skill is updated.
+Repo: [JASGENIUS/appbacktest-skill](https://github.com/JASGENIUS/appbacktest-skill)
+
 ## The prompt
 
-Paste this into Claude Code, Cursor, Codex, or any agent with shell access.
-Adjust the two bracketed lines at the top.
+For any other agent, paste this in. Adjust the two bracketed lines at the top.
 
 ````markdown
 You have AppBacktest available: a CLI that sends AI-simulated users ("probes")

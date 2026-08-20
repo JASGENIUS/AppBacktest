@@ -49,6 +49,7 @@ cannot see.
 |---|---|
 | **[Use it with your AI agent](#use-it-with-your-ai-agent)** | the loop, and what your agent reads out of the report |
 | **[The agent prompt](#the-agent-prompt)** | copy-paste, for Claude Code / Cursor / Codex |
+| **[Claude skill](https://github.com/JASGENIUS/appbacktest-skill)** | install once, and Claude reaches for it on its own |
 | **[Install](#install)** | three commands, no API key |
 | **[Use it manually](#use-it-manually)** | write a goal, run it, read the report yourself |
 
@@ -127,9 +128,23 @@ make the app's own state endpoint lie, since `http` checks trust it as oracle.
 An independent DB oracle is on the roadmap; code review is the enforcement
 point until then.
 
+## Install it as a Claude skill
+
+If your agent is Claude, skip the copy-paste. The companion skill carries this
+workflow, the config patterns, a triage script, and the rules below — and Claude
+picks it up on its own whenever a task involves testing an app or checking that
+a feature really works:
+
+```bash
+git clone https://github.com/JASGENIUS/appbacktest-skill
+cp -r appbacktest-skill/skills/appbacktest ~/.claude/skills/
+```
+
+Repo: **[JASGENIUS/appbacktest-skill](https://github.com/JASGENIUS/appbacktest-skill)**
+
 ## The agent prompt
 
-Copy this into your coding agent. Fill in the two bracketed lines.
+For any other agent, copy this in. Fill in the two bracketed lines.
 Full version, with the reasoning behind each rule:
 **[docs/AI-AGENTS.md](docs/AI-AGENTS.md)**.
 
